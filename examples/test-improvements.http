@@ -1,0 +1,193 @@
+### Teste 1: Validação de Schema
+# Deve validar argumentos antes de executar
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-validation",
+  "task": "Envie um email para teste@example.com com assunto 'Teste de Validação'",
+  "context": {
+    "execution_mode": "strict",
+    "additionalContext": "Teste de validação de schema"
+  }
+}
+
+###
+
+### Teste 2: Idempotência
+# Execute 2x - segunda vez deve usar checkpoint
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-idempotency",
+  "task": "Liste os 5 primeiros emails não lidos do Gmail",
+  "context": {
+    "additionalContext": "Teste de idempotência - execute 2x"
+  }
+}
+
+###
+
+### Teste 3: Retry com Erro Transiente
+# Simula erro transiente que deve fazer retry
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-retry",
+  "task": "Busque informações do repositório no GitHub",
+  "context": {
+    "additionalContext": "Teste de retry policy"
+  }
+}
+
+###
+
+### Teste 4: Paginação com Limite
+# Deve respeitar limite de itens
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-pagination",
+  "task": "Liste os primeiros 3 arquivos da pasta /documentos no Dropbox",
+  "context": {
+    "additionalContext": "Teste de paginação com limite"
+  }
+}
+
+###
+
+### Teste 5: Operação Destrutiva com Confirmação
+# Deve solicitar confirmação em modo strict
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-destructive",
+  "task": "Delete o arquivo teste.txt do Dropbox",
+  "context": {
+    "execution_mode": "strict",
+    "additionalContext": "Teste de confirmação para operação destrutiva"
+  }
+}
+
+###
+
+### Teste 6: Multi-App com Checkpoints
+# Workflow complexo que deve salvar checkpoints
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multiapp",
+  "task": "Busque o último commit do GitHub no repo 'meu-projeto', crie uma issue com título 'Review do commit' e notifique no Slack canal #dev",
+  "context": {
+    "execution_mode": "strict",
+    "additionalContext": "Teste de workflow multi-app com checkpoints"
+  }
+}
+
+###
+
+### Teste 7: Erro de Validação
+# Deve falhar na validação local antes de executar
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-validation-error",
+  "task": "Envie um email sem especificar destinatário",
+  "context": {
+    "execution_mode": "strict",
+    "additionalContext": "Teste de erro de validação"
+  }
+}
+
+###
+
+### Limpar Sessão
+DELETE http://localhost:3000/session/test-validation
+
+###
+
+### Health Check
+GET http://localhost:3000/health
+
+###
+
+### Teste 8: Formatação de Resposta - Envio de Email
+# Deve retornar resposta formatada com destinatário, assunto e corpo
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-format-email",
+  "task": "Envie um email para joaovictorviegas53@gmail.com com assunto 'Teste de Formatação' e corpo 'Esta é uma mensagem de teste para validar a formatação da resposta'",
+  "context": {
+    "additionalContext": "Teste de formatação de resposta para envio de email"
+  }
+}
+
+###
+
+### Teste 9: Formatação de Resposta - Listagem de Emails
+# Deve retornar lista formatada com assunto, remetente e prévia de cada email
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-format-list",
+  "task": "Liste os 5 primeiros emails não lidos do Gmail",
+  "context": {
+    "additionalContext": "Teste de formatação de resposta para listagem"
+  }
+}
+
+###
+
+### Teste 10: Formatação de Resposta - Criação de Arquivo
+# Deve retornar resposta formatada com nome, local e link do arquivo
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-format-file",
+  "task": "Crie um arquivo chamado 'relatorio-vendas.txt' no Google Drive com o conteúdo 'Vendas do mês: R$ 10.000'",
+  "context": {
+    "additionalContext": "Teste de formatação de resposta para criação de arquivo"
+  }
+}
+
+###
+
+### Teste 11: Formatação de Resposta - Busca e Ação
+# Deve retornar resposta formatada com detalhes da busca e ação realizada
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-format-search",
+  "task": "Busque emails do remetente 'banco@example.com' nos últimos 7 dias e marque como lidos",
+  "context": {
+    "additionalContext": "Teste de formatação de resposta para busca e ação"
+  }
+}
+
+###
+
+### Teste 12: Formatação de Resposta - Workflow Multi-Step
+# Deve retornar resposta formatada resumindo todas as etapas
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-format-workflow",
+  "task": "Busque o arquivo 'dados.csv' no Dropbox, conte quantas linhas tem e envie um email para gerente@example.com informando o total",
+  "context": {
+    "additionalContext": "Teste de formatação de resposta para workflow multi-step"
+  }
+}
+
+###

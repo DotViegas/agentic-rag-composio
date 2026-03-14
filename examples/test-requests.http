@@ -1,0 +1,93 @@
+### Health Check
+GET http://localhost:3000/health
+
+###
+
+### Exemplo 1: Enviar Email
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "user-123",
+  "task": "Envie um email para teste@example.com com o assunto 'Hello from Composio' e corpo 'Este é um email de teste'",
+  "context": {
+    "additionalContext": "Email de teste, tom informal"
+  }
+}
+
+###
+
+### Exemplo 2: Listar Emails Não Lidos
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "user-123",
+  "task": "Liste todos os emails não lidos do Gmail dos últimos 7 dias",
+  "context": {
+    "additionalContext": "Mostrar apenas assunto e remetente"
+  }
+}
+
+###
+
+### Exemplo 3: Criar Issue no GitHub
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "dev-team",
+  "task": "Crie uma issue no repositório 'meu-projeto' com título 'Implementar autenticação' e descrição 'Adicionar login com OAuth2'",
+  "context": {
+    "additionalContext": "Label: enhancement"
+  }
+}
+
+###
+
+### Exemplo 4: Postar no Slack
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "bot-notifications",
+  "task": "Envie uma mensagem no canal #geral do Slack: 'Deploy realizado com sucesso!'",
+  "context": {
+    "additionalContext": "Incluir emoji de check"
+  }
+}
+
+###
+
+### Exemplo 5: Buscar Arquivo no Dropbox
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "user-456",
+  "task": "Localize o arquivo 'relatorio.pdf' no Dropbox e me informe o caminho completo",
+  "context": {
+    "additionalContext": "Buscar em todas as pastas"
+  }
+}
+
+###
+
+### Exemplo 6: Tarefa Multi-App
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "workflow-bot",
+  "task": "Busque o último commit do GitHub no repo 'api-backend' e poste um resumo no Slack no canal #dev",
+  "context": {
+    "additionalContext": "Incluir hash do commit e mensagem"
+  }
+}
+
+###
+
+### Limpar Sessão
+DELETE http://localhost:3000/session/user-123
+
+###
