@@ -115,13 +115,44 @@ export class ComposioOrchestrator {
       }
 
       // ============================================================
+      // VERIFICAR RISCOS E SOLICITAR CONFIRMAÇÃO ANTECIPADA
+      // ============================================================
+      
+      // Verificar se há confirmação prévia do usuário
+      const hasUserConfirmation = context.confirmed === true;
+      
+      // Coletar todas as subtarefas com riscos críticos
+      const riskySubtasks = plan.subtasks.filter(st => st.isCriticalRisk());
+      
+      if (riskySubtasks.length > 0 && !hasUserConfirmation && executionMode === ExecutionMode.STRICT) {
+        logger.warning('⚠️  Operações de risco detectadas no plano');
+        logger.separator('🔔 CONFIRMAÇÃO NECESSÁRIA ANTES DA EXECUÇÃO');
+        
+        // Construir mensagem de confirmação
+        const confirmationMessage = this.buildRiskConfirmationMessage(plan, riskySubtasks);
+        
+        logger.info('Aguardando confirmação do usuário para prosseguir');
+        
+        return {
+          status: 200,
+          'response-ai': 'Confirmação necessária para operações de risco',
+          message: confirmationMessage
+        };
+      }
+      
+      // Se chegou aqui, ou não há riscos, ou usuário já confirmou
+      if (hasUserConfirmation) {
+        logger.success('✅ Confirmação do usuário recebida - prosseguindo com execução');
+      }
+
+      // ============================================================
       // FASE 2: EXECUÇÃO COM GUARDRAILS
       // ============================================================
       logger.phase('FASE 2: EXECUÇÃO COM PLANO');
       state.status = 'executing';
 
       const executor = new EnhancedTaskExecutor(session, logger, executionMode, userId);
-      await executor.executeWithPlan(plan, state, agentInstructions);
+      await executor.executeWithPlan(plan, state, agentInstructions, hasUserConfirmation);
 
       logger.success('Execução concluída');
 
@@ -190,6 +221,41 @@ export class ComposioOrchestrator {
 
   clearSession(userId) {
     this.sessions.delete(userId);
+  }
+
+  buildRiskConfirmationMessage(plan, riskySubtasks) {
+    const riskDetails = riskySubtasks.map((st, idx) => {
+      const risks = Object.entries(st.risk_flags)
+        .filter(([_, value]) => value === true)
+        .map(([key, _]) => key);
+      
+      return `**${idx + 1}. ${st.title}**\n   Riscos: ${risks.join(', ')}`;
+    }).join('\n\n');
+
+    return `⚠️  **Confirmação Necessária**
+
+A tarefa que você solicitou envolve operações de risco que requerem sua confirmação antes de prosseguir:
+
+${riskDetails}
+
+**O que será feito:**
+${plan.goal}
+
+**Para confirmar e prosseguir com a execução:**
+Envie a mesma requisição novamente incluindo \`"confirmed": true\` no campo \`context\`.
+
+**Exemplo:**
+\`\`\`json
+{
+  "userId": "seu-user-id",
+  "task": "sua tarefa aqui",
+  "context": {
+    "confirmed": true
+  }
+}
+\`\`\`
+
+**Importante:** Ao confirmar, todas as operações listadas acima serão executadas automaticamente sem interrupções.`;
   }
 
   // Método para retomar execução de um checkpoint

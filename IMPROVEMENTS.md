@@ -2,13 +2,14 @@
 
 ## Visão Geral
 
-Implementadas 5 melhorias críticas priorizadas para produção:
+Implementadas 6 melhorias críticas priorizadas para produção:
 
 1. ✅ Validação determinística de schemas
 2. ✅ Idempotência e resume por checkpoint
 3. ✅ Classificação de erros e retry inteligente
 4. ✅ Paginação com limites e critérios de parada
 5. ✅ Formatação inteligente de respostas com LLM
+6. ✅ Confirmação antecipada de riscos
 
 ## 1. Validação Determinística de Schemas
 
@@ -427,3 +428,225 @@ Depois (resposta formatada):
 - [ ] Suporte a múltiplos idiomas
 - [ ] Métricas de qualidade da formatação
 - [ ] A/B testing de prompts
+
+## 6. Confirmação Antecipada de Riscos
+
+**Módulos:** `src/agent.js`, `src/executor-enhanced.js`
+
+### Problema Resolvido
+- Sistema parava no meio da execução para solicitar confirmação
+- Usuário não sabia antecipadamente quais operações seriam executadas
+- Interrupções no fluxo de execução causavam experiência ruim
+- Falta de transparência sobre operações de risco
+
+### Implementação
+- Detecta operações de risco durante o planejamento (Fase 1)
+- Solicita confirmação ANTES de iniciar a execução
+- Execução sem bloqueios após confirmação do usuário
+- Lista todas as operações de risco de forma clara
+
+### Fluxo
+
+#### Antes (Problemático)
+```
+Planejamento → Execução → PARADA (confirmação) → Continuar execução
+```
+
+#### Depois (Melhorado)
+```
+Planejamento → Detectar riscos → Solicitar confirmação → Execução sem bloqueios
+```
+
+### Uso
+
+#### 1. Primeira Requisição (Detecta Riscos)
+```json
+{
+  "userId": "user-123",
+  "task": "Edite o arquivo relatorio.txt adicionando nova linha",
+  "context": {
+    "execution_mode": "strict"
+  }
+}
+```
+
+**Resposta:**
+```json
+{
+  "status": 200,
+  "response-ai": "Confirmação necessária para operações de risco",
+  "message": "⚠️  **Confirmação Necessária**\n\nA tarefa que você solicitou envolve operações de risco que requerem sua confirmação antes de prosseguir:\n\n**1. Editar arquivo 'relatorio.txt'**\n   Riscos: destrutivo\n\n**2. Fazer upload da nova versão**\n   Riscos: destrutivo\n\n**O que será feito:**\nEditar o arquivo 'relatorio.txt' no Google Drive adicionando uma nova linha com informações de gastos.\n\n**Para confirmar e prosseguir com a execução:**\nEnvie a mesma requisição novamente incluindo `\"confirmed\": true` no campo `context`."
+}
+```
+
+#### 2. Segunda Requisição (Com Confirmação)
+```json
+{
+  "userId": "user-123",
+  "task": "Edite o arquivo relatorio.txt adicionando nova linha",
+  "context": {
+    "execution_mode": "strict",
+    "confirmed": true
+  }
+}
+```
+
+**Resultado:** Execução completa sem interrupções
+
+### Detecção de Riscos
+
+O sistema detecta os seguintes tipos de risco:
+
+```javascript
+risk_flags: {
+  "destrutivo": true,    // delete, overwrite, move, edit
+  "publico": false,      // post em canal público
+  "bulk": false,         // operações em massa (>10 itens)
+  "admin": false,        // mudanças de permissões
+  "financeiro": false    // custos, compras, ads
+}
+```
+
+### Implementação Técnica
+
+#### Em `src/agent.js`
+```javascript
+// Verificar se há confirmação prévia do usuário
+const hasUserConfirmation = context.confirmed === true;
+
+// Coletar todas as subtarefas com riscos críticos
+const riskySubtasks = plan.subtasks.filter(st => st.isCriticalRisk());
+
+if (riskySubtasks.length > 0 && !hasUserConfirmation && executionMode === ExecutionMode.STRICT) {
+  // Construir mensagem de confirmação
+  const confirmationMessage = this.buildRiskConfirmationMessage(plan, riskySubtasks);
+  
+  return {
+    status: 200,
+    'response-ai': 'Confirmação necessária para operações de risco',
+    message: confirmationMessage
+  };
+}
+```
+
+#### Em `src/executor-enhanced.js`
+```javascript
+async executeWithPlan(plan, state, agentInstructions, userConfirmed = false) {
+  // Marcar que usuário já confirmou riscos
+  this.userConfirmed = userConfirmed;
+  
+  // Durante execução: apenas logar riscos, não bloquear
+  if (subtask.hasRisks()) {
+    this.logRisks(subtask); // Não bloqueia mais
+  }
+}
+
+logRisks(subtask) {
+  const risks = Object.entries(subtask.risk_flags)
+    .filter(([_, value]) => value === true)
+    .map(([key, _]) => key);
+
+  if (risks.length > 0) {
+    if (this.userConfirmed) {
+      this.logger.info(`⚠️  Executando operação de risco (confirmada pelo usuário): ${risks.join(', ')}`);
+    } else {
+      this.logger.risk(risks.join(', '));
+    }
+  }
+}
+```
+
+### Mensagem de Confirmação
+
+```javascript
+buildRiskConfirmationMessage(plan, riskySubtasks) {
+  const riskDetails = riskySubtasks.map((st, idx) => {
+    const risks = Object.entries(st.risk_flags)
+      .filter(([_, value]) => value === true)
+      .map(([key, _]) => key);
+    
+    return `**${idx + 1}. ${st.title}**\n   Riscos: ${risks.join(', ')}`;
+  }).join('\n\n');
+
+  return `⚠️  **Confirmação Necessária**
+
+A tarefa que você solicitou envolve operações de risco que requerem sua confirmação antes de prosseguir:
+
+${riskDetails}
+
+**O que será feito:**
+${plan.goal}
+
+**Para confirmar e prosseguir com a execução:**
+Envie a mesma requisição novamente incluindo \`"confirmed": true\` no campo \`context\`.`;
+}
+```
+
+### Benefícios
+
+✅ **Transparência**: Usuário vê todas as operações de risco antecipadamente
+
+✅ **Experiência melhorada**: Sem interrupções no meio da execução
+
+✅ **Controle**: Usuário decide conscientemente antes de iniciar
+
+✅ **Eficiência**: Execução contínua após confirmação
+
+✅ **Segurança**: Mantém proteção contra operações perigosas
+
+✅ **Flexibilidade**: Funciona com operações simples e workflows complexos
+
+### Cenários de Uso
+
+#### Cenário 1: Operação Simples de Risco
+```
+Tarefa: "Delete o arquivo temp.txt do Dropbox"
+Resultado: Solicita confirmação listando a operação destrutiva
+```
+
+#### Cenário 2: Workflow Multi-Step com Riscos
+```
+Tarefa: "Edite o arquivo dados.csv, adicione uma linha e envie por email"
+Resultado: Lista todas as operações de risco (edição + envio)
+```
+
+#### Cenário 3: Operação Sem Riscos
+```
+Tarefa: "Liste os emails não lidos"
+Resultado: Executa diretamente sem solicitar confirmação
+```
+
+#### Cenário 4: Múltiplas Operações de Risco
+```
+Tarefa: "Delete arquivo X, envie email em massa e altere permissões"
+Resultado: Lista todos os riscos (destrutivo + bulk + admin)
+```
+
+### Logs de Execução
+
+#### Antes da Confirmação
+```
+⚠️  Operações de risco detectadas no plano
+🔔 CONFIRMAÇÃO NECESSÁRIA ANTES DA EXECUÇÃO
+ℹ️  Aguardando confirmação do usuário para prosseguir
+```
+
+#### Após Confirmação
+```
+✅ Confirmação do usuário recebida - prosseguindo com execução
+⚠️  Executando operação de risco (confirmada pelo usuário): destrutivo
+```
+
+### Limitações
+
+- Funciona apenas em modo STRICT
+- Requer reenvio da requisição com `confirmed: true`
+- Não suporta confirmação parcial (é tudo ou nada)
+
+### Próximos Passos
+
+- [ ] Confirmação com preview das mudanças
+- [ ] Confirmação seletiva por operação
+- [ ] Interface web para confirmação
+- [ ] Timeout para confirmações pendentes
+- [ ] Histórico de confirmações por usuário

@@ -23,7 +23,8 @@ Um subagente especializado que executa tarefas complexas em aplicações externa
 ### 🔒 Segurança
 
 - Modo STRICT para operações críticas
-- Confirmação obrigatória para ações destrutivas
+- Confirmação antecipada para ações de risco (antes da execução)
+- Execução sem bloqueios após confirmação do usuário
 - Redação automática de segredos nos logs
 - Validação rigorosa de pré/pós-condições
 
@@ -350,13 +351,25 @@ Se informações críticas estiverem faltando:
 
 ### Operação destrutiva
 
-Em modo STRICT, solicita confirmação:
+Em modo STRICT, solicita confirmação ANTES da execução:
 
 ```json
 {
   "status": 200,
-  "response-ai": "Confirmação necessária",
-  "message": "Esta operação vai deletar o arquivo 'importante.txt'. Confirme para prosseguir."
+  "response-ai": "Confirmação necessária para operações de risco",
+  "message": "⚠️  **Confirmação Necessária**\n\nA tarefa que você solicitou envolve operações de risco que requerem sua confirmação antes de prosseguir:\n\n**1. Editar arquivo 'relatorio.txt'**\n   Riscos: destrutivo\n\n**Para confirmar e prosseguir com a execução:**\nEnvie a mesma requisição novamente incluindo `\"confirmed\": true` no campo `context`."
+}
+```
+
+Para confirmar, reenvie com `"confirmed": true`:
+
+```json
+{
+  "userId": "user-123",
+  "task": "Edite o arquivo relatorio.txt...",
+  "context": {
+    "confirmed": true
+  }
 }
 ```
 

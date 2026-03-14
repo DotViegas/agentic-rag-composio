@@ -27,8 +27,11 @@ export class EnhancedTaskExecutor {
     this.toolSchemas = new Map();
   }
 
-  async executeWithPlan(plan, state, agentInstructions) {
+  async executeWithPlan(plan, state, agentInstructions, userConfirmed = false) {
     this.logger.phase('EXECUÇÃO COM PLANO (ENHANCED)');
+    
+    // Marcar que usuário já confirmou riscos (se aplicável)
+    this.userConfirmed = userConfirmed;
     
     for (let i = 0; i < plan.subtasks.length; i++) {
       const subtask = plan.subtasks[i];
@@ -68,9 +71,9 @@ export class EnhancedTaskExecutor {
         throw new Error(`Dependências não satisfeitas para subtask ${subtask.id}`);
       }
 
-      // Verificar riscos e solicitar confirmação se necessário
+      // Verificar riscos - APENAS logar, não bloquear se usuário já confirmou
       if (subtask.hasRisks()) {
-        await this.handleRisks(subtask, state);
+        this.logRisks(subtask);
       }
 
       // Executar subtarefa com retry
@@ -169,34 +172,16 @@ export class EnhancedTaskExecutor {
     return true;
   }
 
-  async handleRisks(subtask, state) {
+  logRisks(subtask) {
     const risks = Object.entries(subtask.risk_flags)
       .filter(([_, value]) => value === true)
       .map(([key, _]) => key);
 
     if (risks.length > 0) {
-      this.logger.risk(risks.join(', '));
-      
-      if (subtask.isCriticalRisk()) {
-        this.logger.confirmation(
-          `Esta operação é ${risks.join(', ')}. ` +
-          `Subtarefa: ${subtask.title}. ` +
-          `Confirme antes de prosseguir.`
-        );
-        
-        state.confirmations.push({
-          subtask_id: subtask.id,
-          risks: risks,
-          timestamp: new Date().toISOString(),
-          status: 'required'
-        });
-        
-        if (this.executionMode === 'strict') {
-          throw new Error(
-            `Confirmação necessária para operação crítica: ${risks.join(', ')}. ` +
-            `Execução pausada no modo strict.`
-          );
-        }
+      if (this.userConfirmed) {
+        this.logger.info(`⚠️  Executando operação de risco (confirmada pelo usuário): ${risks.join(', ')}`);
+      } else {
+        this.logger.risk(risks.join(', '));
       }
     }
   }
@@ -432,21 +417,28 @@ Retorne um JSON com:
     
     const artifacts = {};
     
+    this.logger.info('🔍 Analisando texto para extração de artefatos...');
+    this.logger.field('Texto (primeiros 200 chars)', text.substring(0, 200));
+    
     // Padrões mais abrangentes para capturar IDs e URLs
     const patterns = {
       message_id: [
-        /\*\*Message ID\*\*[:\s]+([a-zA-Z0-9_.-]+)/i, // **Message ID:** 19cea79d0389d430
-        /\*\*Mensagem ID\*\*[:\s]+([a-zA-Z0-9_.-]+)/i, // **Mensagem ID**: 19cea636e7539772
-        /Message ID[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /Mensagem ID[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /message[_\s-]?id[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /id[:\s]+([a-zA-Z0-9_.-]+)/i,
+        /\*\*Message ID\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i, // **Message ID:** `19cea79d0389d430`
+        /\*\*Mensagem ID\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i, // **Mensagem ID**: `19cea636e7539772`
+        /\*\*ID da mensagem\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i, // **ID da mensagem**: `abc123`
+        /Message ID[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /Mensagem ID[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /ID da mensagem[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /message[_\s-]?id[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /id[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
         /<([a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+)>/i, // Email message ID format
       ],
       thread_id: [
-        /\*\*Thread ID\*\*[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /Thread ID[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /thread[_\s-]?id[:\s]+([a-zA-Z0-9_.-]+)/i,
+        /\*\*Thread ID\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /\*\*ID da thread\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /Thread ID[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /ID da thread[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /thread[_\s-]?id[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
       ],
       auth_url: [
         /\[.*?\]\((https:\/\/connect\.composio\.dev\/[^\)]+)\)/i, // Markdown link
@@ -457,29 +449,42 @@ Retorne um JSON com:
         /(https:\/\/[^\s]*connect[^\s]+)/i,
       ],
       file_id: [
-        /\*\*File ID\*\*[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /File ID[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /file[_\s-]?id[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /file[:\s]+([a-zA-Z0-9_.-]+)/i,
+        /\*\*File ID\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i, // **File ID**: `abc123`
+        /\*\*ID do arquivo\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i, // **ID do arquivo**: `1LWpgOp-VtDvPRZ8DmuQFta5_rxkuKabw`
+        /File ID[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /ID do arquivo[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /file[_\s-]?id[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /arquivo[_\s-]?id[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /file[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
       ],
       issue_id: [
-        /\*\*Issue ID\*\*[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /Issue ID[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /issue[_\s-]?(?:id|number)[:\s]+([a-zA-Z0-9_.-]+)/i,
+        /\*\*Issue ID\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /\*\*ID da issue\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /Issue ID[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /ID da issue[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /issue[_\s-]?(?:id|number)[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
         /#(\d+)/i, // GitHub issue format
       ],
       event_id: [
-        /\*\*Event ID\*\*[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /Event ID[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /event[_\s-]?id[:\s]+([a-zA-Z0-9_.-]+)/i,
+        /\*\*Event ID\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /\*\*ID do evento\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /Event ID[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /ID do evento[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /event[_\s-]?id[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
       ],
       revision: [
-        /\*\*Revision\*\*[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /Revision[:\s]+([a-zA-Z0-9_.-]+)/i,
-        /rev(?:ision)?[:\s]+([a-zA-Z0-9_.-]+)/i,
+        /\*\*Revision\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /\*\*Revisão\*\*[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /Revision[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /Revisão[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
+        /rev(?:ision)?[:\s]+`?([a-zA-Z0-9_.-]+)`?/i,
       ],
       url: [
         /(https?:\/\/[^\s\)]+)/i,
+      ],
+      // Padrão genérico para IDs em backticks
+      generic_id: [
+        /`([a-zA-Z0-9_.-]{10,})`/i, // Qualquer ID em backticks com pelo menos 10 caracteres
       ]
     };
 
@@ -488,8 +493,31 @@ Retorne um JSON com:
         const match = text.match(pattern);
         if (match && match[1]) {
           artifacts[key] = match[1];
+          this.logger.success(`✅ Extraído ${key}: ${match[1]}`);
           break; // Usar primeira correspondência
         }
+      }
+    }
+
+    // Se não encontrou file_id mas encontrou generic_id, tentar mapear
+    if (!artifacts.file_id && artifacts.generic_id) {
+      // Se o contexto sugere que é um file_id (contém palavras relacionadas a arquivo)
+      const fileContext = /arquivo|file|document|doc/i.test(text);
+      if (fileContext) {
+        artifacts.file_id = artifacts.generic_id;
+        delete artifacts.generic_id;
+        this.logger.success(`✅ Mapeado generic_id para file_id: ${artifacts.file_id}`);
+      }
+    }
+
+    // Se não encontrou message_id mas encontrou generic_id, tentar mapear
+    if (!artifacts.message_id && artifacts.generic_id) {
+      // Se o contexto sugere que é um message_id (contém palavras relacionadas a mensagem)
+      const messageContext = /mensagem|message|email|enviado|sent/i.test(text);
+      if (messageContext) {
+        artifacts.message_id = artifacts.generic_id;
+        delete artifacts.generic_id;
+        this.logger.success(`✅ Mapeado generic_id para message_id: ${artifacts.message_id}`);
       }
     }
 
@@ -502,6 +530,12 @@ Retorne um JSON com:
     const lowerText = text.toLowerCase();
     if (successKeywords.some(keyword => lowerText.includes(keyword))) {
       artifacts.status = 'success';
+      this.logger.success(`✅ Status de sucesso detectado`);
+    }
+
+    this.logger.field('Artefatos extraídos', Object.keys(artifacts).length);
+    if (Object.keys(artifacts).length > 0) {
+      this.logger.json(artifacts, 2);
     }
 
     return artifacts;
