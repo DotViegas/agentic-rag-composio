@@ -10,6 +10,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Controle de concorrência por usuário
+const activeExecutions = new Map(); // userId -> Promise
+
 // Inicializar orquestrador
 const orchestrator = new ComposioOrchestrator(
   process.env.COMPOSIO_API_KEY,
@@ -34,9 +37,29 @@ app.post('/execute', async (req, res) => {
       });
     }
 
+    // Verificar se já há uma execução ativa para este usuário
+    if (activeExecutions.has(userId)) {
+      console.log(`⚠️  Requisição duplicada de ${userId} - execução já em andamento`);
+      return res.status(429).json({
+        status: 429,
+        'response-ai': 'Execução já em andamento',
+        message: `Já existe uma tarefa sendo executada para o usuário ${userId}. Aguarde a conclusão antes de enviar nova requisição.`
+      });
+    }
+
     console.log(`📥 Nova requisição de ${userId}: ${task}`);
 
-    const result = await orchestrator.executeTask(userId, task, context);
+    // Marcar execução como ativa
+    const executionPromise = orchestrator.executeTask(userId, task, context)
+      .finally(() => {
+        // Remover da lista de execuções ativas quando concluir
+        activeExecutions.delete(userId);
+        console.log(`✅ Execução concluída para ${userId}`);
+      });
+    
+    activeExecutions.set(userId, executionPromise);
+
+    const result = await executionPromise;
 
     res.json(result);
   } catch (error) {

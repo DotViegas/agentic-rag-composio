@@ -1,0 +1,115 @@
+{
+  "session_id": "session_abc123xyz789",
+  "primary_tool_slugs": [
+    "GOOGLEDRIVE_FIND_FILE",
+    "GOOGLEDRIVE_DOWNLOAD_FILE",
+    "GOOGLEDRIVE_GET_FILE_METADATA"
+  ],
+  "related_tool_slugs": [
+    "GOOGLEDRIVE_EXPORT_GOOGLE_WORKSPACE_FILE",
+    "GOOGLEDRIVE_LIST_SHARED_DRIVES",
+    "GOOGLEDRIVE_GET_ABOUT",
+    "GOOGLEDRIVE_LIST_PERMISSIONS"
+  ],
+  "tool_schemas": {
+    "GOOGLEDRIVE_FIND_FILE": {
+      "tool_slug": "GOOGLEDRIVE_FIND_FILE",
+      "description": "Search for files in Google Drive",
+      "hasFullSchema": true,
+      "toolkit": "googledrive",
+      "input_schema": {
+        "type": "object",
+        "required": ["q"],
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Query string for searching files"
+          },
+          "pageToken": {
+            "type": "string",
+            "description": "Token for pagination"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Number of results per page"
+          },
+          "corpora": {
+            "type": "string",
+            "description": "Corpora to search"
+          },
+          "includeItemsFromAllDrives": {
+            "type": "boolean",
+            "description": "Include items from all drives"
+          },
+          "supportsAllDrives": {
+            "type": "boolean",
+            "description": "Support all drives"
+          }
+        }
+      }
+    },
+    "GOOGLEDRIVE_DOWNLOAD_FILE": {
+      "tool_slug": "GOOGLEDRIVE_DOWNLOAD_FILE",
+      "description": "Download a file from Google Drive",
+      "hasFullSchema": true,
+      "toolkit": "googledrive",
+      "input_schema": {
+        "type": "object",
+        "required": ["file_id"],
+        "properties": {
+          "file_id": {
+            "type": "string",
+            "description": "ID of the file to download"
+          },
+          "mime_type": {
+            "type": "string",
+            "description": "MIME type for export"
+          }
+        }
+      }
+    },
+    "GOOGLEDRIVE_GET_FILE_METADATA": {
+      "tool_slug": "GOOGLEDRIVE_GET_FILE_METADATA",
+      "description": "Get metadata of a file",
+      "hasFullSchema": true,
+      "toolkit": "googledrive",
+      "input_schema": {
+        "type": "object",
+        "required": ["file_id"],
+        "properties": {
+          "file_id": {
+            "type": "string",
+            "description": "ID of the file"
+          },
+          "fields": {
+            "type": "string",
+            "description": "Fields to return"
+          }
+        }
+      }
+    },
+    "GOOGLEDRIVE_EXPORT_GOOGLE_WORKSPACE_FILE": {
+      "tool_slug": "GOOGLEDRIVE_EXPORT_GOOGLE_WORKSPACE_FILE",
+      "description": "Export Google Workspace file",
+      "hasFullSchema": false,
+      "schemaRef": "googledrive/export_file",
+      "toolkit": "googledrive"
+    }
+  },
+  "connection_status": {
+    "googledrive": {
+      "has_active_connection": true,
+      "toolkit": "googledrive"
+    }
+  },
+  "recommended_plan": {
+    "steps": [
+      "Use GOOGLEDRIVE_FIND_FILE to search for the file",
+      "Use GOOGLEDRIVE_DOWNLOAD_FILE to download the content"
+    ]
+  },
+  "pitfalls": [
+    "Remember to add 'and trashed = false' to the query",
+    "Use 'contains' instead of exact match for partial names"
+  ]
+}

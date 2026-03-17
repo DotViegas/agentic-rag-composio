@@ -69,17 +69,23 @@
 }
 ```
 
-### 5. Editar Arquivo no Dropbox e Enviar por Email
+### 5. Editar Arquivo no Dropbox e Enviar por Email (Usa Workbench)
 
 ```json
 {
   "userId": "user-456",
   "task": "Localize o arquivo 'relatorio.txt' no Dropbox, adicione a linha 'Atualizado em 14/03/2026' no final, salve e envie por email para gerente@example.com",
   "context": {
-    "additionalContext": "Assunto do email: 'Relatório Atualizado'"
+    "additionalContext": "Assunto do email: 'Relatório Atualizado'. Use o Workbench para editar o arquivo."
   }
 }
 ```
+
+**Nota:** Esta operação deve usar `COMPOSIO_REMOTE_WORKBENCH` para:
+1. Baixar o arquivo do Dropbox
+2. Editar o conteúdo adicionando a nova linha
+3. Fazer upload da versão atualizada
+4. Enviar por email
 
 ### 6. Buscar e Processar Múltiplos Itens
 

@@ -1,0 +1,74 @@
+{
+  "comment": "Exemplo real de state.artifacts após execução de múltiplas subtarefas",
+  "artifacts": {
+    "subtask_1": {
+      "file_id": "1aBcDeFgHiJkLmNoPqRsTuVwXyZ",
+      "file_name": "Faturas_para_pagar_LUNA 16-03-2026.xlsx",
+      "file_path": "/Documentos/Faturas_para_pagar_LUNA 16-03-2026.xlsx",
+      "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "web_view_link": "https://drive.google.com/file/d/1aBcDeFgHiJkLmNoPqRsTuVwXyZ/view"
+    },
+    "subtask_2": {
+      "file_id": "1aBcDeFgHiJkLmNoPqRsTuVwXyZ",
+      "file_content": "base64_encoded_content_here...",
+      "file_size": 45678,
+      "downloaded_at": "2026-03-16T23:18:39.644Z"
+    },
+    "subtask_3": {
+      "file_id": "1aBcDeFgHiJkLmNoPqRsTuVwXyZ",
+      "original_rows": 150,
+      "new_rows": 151,
+      "row_added": {
+        "data": ["2026-03-16", "Fornecedor XYZ", "R$ 1.500,00", "Pendente"],
+        "position": 151
+      },
+      "modified_content": "base64_encoded_modified_content..."
+    },
+    "subtask_4": {
+      "file_id": "1xYzAbCdEfGhIjKlMnOpQrStUv",
+      "new_file_id": "1xYzAbCdEfGhIjKlMnOpQrStUv",
+      "file_name": "Faturas_para_pagar_LUNA 16-03-2026.xlsx",
+      "upload_status": "success",
+      "web_view_link": "https://drive.google.com/file/d/1xYzAbCdEfGhIjKlMnOpQrStUv/view",
+      "version": "v2",
+      "updated_at": "2026-03-16T23:20:15.123Z"
+    },
+    "subtask_5": {
+      "verification_status": "success",
+      "file_verified": true,
+      "row_count_verified": true,
+      "final_row_count": 151,
+      "verification_timestamp": "2026-03-16T23:20:20.456Z"
+    }
+  },
+  "comment_2": "Exemplo com email",
+  "artifacts_email": {
+    "subtask_1": {
+      "message_id": "19cea79d0389d430",
+      "thread_id": "19cea79d0389d430",
+      "recipient": "gerente@empresa.com",
+      "subject": "Relatório de Vendas - Março 2026",
+      "sent_at": "2026-03-16T23:25:30.789Z",
+      "status": "sent"
+    }
+  },
+  "comment_3": "Exemplo com múltiplos toolkits (Drive + Gmail)",
+  "artifacts_multi": {
+    "subtask_1": {
+      "file_id": "1aBcDeFgHiJkLmNoPqRsTuVwXyZ",
+      "file_name": "relatorio.xlsx",
+      "web_view_link": "https://drive.google.com/file/d/1aBcDeFgHiJkLmNoPqRsTuVwXyZ/view"
+    },
+    "subtask_2": {
+      "file_content": "base64_content...",
+      "file_size": 23456
+    },
+    "subtask_3": {
+      "message_id": "19cea79d0389d430",
+      "recipient": "gerente@empresa.com",
+      "subject": "Relatório anexado",
+      "attachment_name": "relatorio.xlsx",
+      "sent_at": "2026-03-16T23:30:00.000Z"
+    }
+  }
+}

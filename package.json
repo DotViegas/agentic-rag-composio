@@ -6,7 +6,11 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "test:search": "node test-search-tools.js",
+    "test:planner": "node test-hybrid-planner.js",
+    "setup:connections": "node setup-test-connections.js",
+    "test:multi": "node test-search-multi-toolkit.js"
   },
   "keywords": ["rag", "composio", "agent", "ai"],
   "author": "",

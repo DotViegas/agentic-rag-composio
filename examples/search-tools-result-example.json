@@ -1,0 +1,139 @@
+{
+  "comment": "Exemplo REAL do step.result quando COMPOSIO_SEARCH_TOOLS é executado",
+  "data": {
+    "results": [
+      {
+        "index": 1,
+        "use_case": "buscar arquivo Faturas_para_pagar_LUNA 16-03-2026.xlsx no Google Drive",
+        "execution_guidance": "IMPORTANT: Follow the recommended plan below. Extract steps before execution, adapt to your current context, execute sequentially with current_step parameter, and check known pitfalls to avoid errors.",
+        "recommended_plan_steps": [
+          "[Optional (if results look unexpectedly empty or the Drive/account context is unclear)] [Prerequisite]: Confirm user/Drive context using GOOGLEDRIVE_GET_ABOUT (avoid searching the wrong account/scope).",
+          "[Required] [Step 1]: Search/list candidates using GOOGLEDRIVE_FIND_FILE (valid q such as trashed=false plus name/fullText/mimeType/date; when applicable set Shared Drive options like supportsAllDrives/includeItemsFromAllDrives/corpora/driveId) and request minimal fields.",
+          "[Required] [Next Step]: If nextPageToken is present, keep paginating with GOOGLEDRIVE_FIND_FILE until exhausted; merge/dedupe by files[].id.",
+          "[Required] [Step 2]: Disambiguate shortlisted ids using GOOGLEDRIVE_GET_FILE_METADATA (minimal fields like name,mimeType,modifiedTime,webViewLink,parents,trashed,size) before selecting targets.",
+          "[Optional (if content verification/offline review is needed)] [Next Step]: Retrieve a small set using GOOGLEDRIVE_DOWNLOAD_FILE (non-Workspace binaries) or GOOGLEDRIVE_EXPORT_GOOGLE_WORKSPACE_FILE (Workspace-native types)."
+        ],
+        "known_pitfalls": [
+          "[GOOGLEDRIVE_FIND_FILE] pageSize ≤ 1000; nextPageToken can appear even when files are returned—follow pageToken/nextPageToken or you'll miss matches.",
+          "[GOOGLEDRIVE_FIND_FILE] q must follow Drive query syntax; bad quoting/boolean operators can cause HTTP 400 \"Invalid Value\" at location \"q\".",
+          "[GOOGLEDRIVE_GET_FILE_METADATA] Returned metadata may omit optional fields (e.g., size); don't assume presence when rendering/sorting or validating types.",
+          "[GOOGLEDRIVE_DOWNLOAD_FILE] Workspace files require export (\"Only files with binary content can be downloaded\"); downloads/exports may return downloaded_file_content as {s3url/s3_url} that is time-limited (often ~3600s)."
+        ],
+        "difficulty": "easy",
+        "primary_tool_slugs": [
+          "GOOGLEDRIVE_FIND_FILE"
+        ],
+        "related_tool_slugs": [
+          "GOOGLEDRIVE_GET_FILE_METADATA",
+          "GOOGLEDRIVE_DOWNLOAD_FILE",
+          "GOOGLEDRIVE_EXPORT_GOOGLE_WORKSPACE_FILE",
+          "GOOGLEDRIVE_GET_ABOUT"
+        ],
+        "toolkits": [
+          "googledrive"
+        ],
+        "plan_id": "b6cb9104f62b47c099ec09d3193c7af1"
+      }
+    ],
+    "toolkit_connection_statuses": [
+      {
+        "toolkit": "googledrive",
+        "has_active_connection": false,
+        "description": "Google Drive is a cloud storage solution for uploading, sharing, and collaborating on files across devices, with robust search and offline access.",
+        "status_message": "No Active connection for toolkit=googledrive. You MUST call COMPOSIO_MANAGE_CONNECTIONS (toolkit=\"googledrive\") to create a connection BEFORE executing any googledrive tools."
+      }
+    ],
+    "tool_schemas": {
+      "GOOGLEDRIVE_FIND_FILE": {
+        "toolkit": "GOOGLEDRIVE",
+        "tool_slug": "GOOGLEDRIVE_FIND_FILE",
+        "description": "The comprehensive Google Drive search tool that handles all file and folder discovery needs. Use this for any file finding task - from simple name searches to complex queries with date filters, MIME types, permissions, custom properties, folder scoping, and more.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "q": {
+              "type": "string",
+              "examples": [
+                "name = 'Budget 2024'",
+                "name contains 'report'",
+                "mimeType = 'application/pdf'",
+                "trashed = false"
+              ],
+              "description": "Query string to filter file results. Accepts both simple text searches and full Google Drive query syntax..."
+            },
+            "fields": {
+              "type": "string",
+              "examples": [
+                "*",
+                "files(id,name,mimeType)",
+                "nextPageToken,files(id,name,modifiedTime,size,webViewLink)"
+              ],
+              "description": "Selector specifying which fields to include in a partial response. Use '*' for all fields..."
+            },
+            "pageSize": {
+              "type": "integer",
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "The maximum number of files to return per page."
+            },
+            "pageToken": {
+              "type": "string",
+              "description": "The token for continuing a previous list request on the next page."
+            }
+          }
+        },
+        "hasFullSchema": true
+      },
+      "GOOGLEDRIVE_GET_FILE_METADATA": {
+        "toolkit": "GOOGLEDRIVE",
+        "tool_slug": "GOOGLEDRIVE_GET_FILE_METADATA",
+        "description": "Tool to get a file's metadata by ID. Use to verify mimeType, parents, and trashed status before destructive operations...",
+        "hasFullSchema": false,
+        "schemaRef": {
+          "tool": "COMPOSIO_GET_TOOL_SCHEMAS",
+          "args": {
+            "tool_slugs": [
+              "GOOGLEDRIVE_GET_FILE_METADATA"
+            ]
+          },
+          "message": "Call COMPOSIO_GET_TOOL_SCHEMAS with tool_slugs=[\"GOOGLEDRIVE_GET_FILE_METADATA\"] to load the full schema before executing this tool."
+        }
+      },
+      "GOOGLEDRIVE_DOWNLOAD_FILE": {
+        "toolkit": "GOOGLEDRIVE",
+        "tool_slug": "GOOGLEDRIVE_DOWNLOAD_FILE",
+        "description": "Downloads a file from Google Drive by its ID. For Google Workspace documents (Docs, Sheets, Slides), optionally exports to a specified mime_type...",
+        "hasFullSchema": false,
+        "schemaRef": {
+          "tool": "COMPOSIO_GET_TOOL_SCHEMAS",
+          "args": {
+            "tool_slugs": [
+              "GOOGLEDRIVE_DOWNLOAD_FILE"
+            ]
+          },
+          "message": "Call COMPOSIO_GET_TOOL_SCHEMAS with tool_slugs=[\"GOOGLEDRIVE_DOWNLOAD_FILE\"] to load the full schema before executing this tool."
+        }
+      }
+    },
+    "time_info": {
+      "current_time_utc": "2026-03-16T23:18:33.761Z",
+      "current_time_utc_epoch_seconds": 1773703113,
+      "message": "This is time in UTC timezone. Get timezone from user if you needed. Always use this time info to construct parameters for tool calls appropriately even when the tool call requires relative times like 'last week', 'last 24 hours', 'today', 'tomorrow' etc."
+    },
+    "session": {
+      "id": "meal",
+      "generate_id": true,
+      "instructions": "REQUIRED: Pass session_id \"meal\" in ALL subsequent meta tool calls for this workflow."
+    },
+    "next_steps_guidance": [
+      "Follow these steps carefully to begin the task:",
+      "1) CALL COMPOSIO_MANAGE_CONNECTIONS: Use manage connections to initiate connections for toolkits that are not active"
+    ],
+    "success": true,
+    "error": null
+  },
+  "error": null,
+  "successful": true,
+  "logId": "log_ARMOD_rGiG0u"
+}

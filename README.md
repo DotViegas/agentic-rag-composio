@@ -34,6 +34,80 @@ Um subagente especializado que executa tarefas complexas em aplicações externa
 - Logs estruturados e coloridos
 - Checkpoints auditáveis
 - Métricas de performance
+- **Sistema de debug completo** (captura execução sem cortes)
+
+## 🐛 Sistema de Debug
+
+### Ativação
+
+Configure no `.env`:
+
+```env
+DEBUG=true
+```
+
+### O que é capturado?
+
+Quando `DEBUG=true`, o sistema captura **TODA a execução** sem truncamento:
+
+- ✅ Requisição inicial completa
+- ✅ Todas as chamadas LLM (prompts e respostas completos)
+- ✅ Todas as chamadas de ferramentas (argumentos e resultados completos)
+- ✅ Todos os checkpoints de subtarefas
+- ✅ Planejamento, execução e verificação completos
+- ✅ Resposta final
+- ✅ Todos os erros e warnings
+- ✅ Logs detalhados
+- ✅ Estatísticas (tokens, duração, memória)
+
+### Onde são salvos?
+
+Relatórios salvos em `.debug/`:
+
+```
+.debug/
+└── debug_trace_1234567890_abc123.json    # Relatório completo (2-10 MB)
+```
+
+### Exemplo de uso
+
+```bash
+# 1. Ativar debug
+echo "DEBUG=true" >> .env
+
+# 2. Reiniciar servidor
+npm start
+
+# 3. Fazer requisição
+curl -X POST http://localhost:3000/execute \
+  -H "Content-Type: application/json" \
+  -d '{"userId": "test", "task": "Enviar email"}'
+
+# 4. Ver relatório
+cat .debug/debug_trace_*.json | jq '.statistics'
+```
+
+### Análise de relatórios
+
+```bash
+# Ver estatísticas
+cat .debug/debug_trace_*.json | jq '.statistics'
+
+# Ver todos os tool calls
+cat .debug/debug_trace_*.json | jq '.tool_calls'
+
+# Ver tokens por LLM call
+cat .debug/debug_trace_*.json | jq '.llm_calls[].tokens'
+
+# Ver erros
+cat .debug/debug_trace_*.json | jq '.errors'
+```
+
+### Documentação completa
+
+Veja **[DEBUG-GUIDE.md](DEBUG-GUIDE.md)** para documentação detalhada do sistema de debug.
+
+**⚠️ IMPORTANTE:** Use `DEBUG=true` apenas em desenvolvimento. Relatórios contêm dados sensíveis e ocupam espaço em disco.
 
 ## 🚀 Quick Start
 
@@ -118,6 +192,27 @@ Content-Type: application/json
 **Message ID:** 19cea79d0389d430
 ```
 
+### Editar Arquivo (usa Workbench)
+
+```json
+{
+  "userId": "user-123",
+  "task": "Edite o arquivo 'relatorio.txt' no Dropbox adicionando a linha 'Atualizado em 14/03/2026' no final"
+}
+```
+
+**Resposta:**
+```
+✅ Arquivo atualizado com sucesso!
+
+**Arquivo:** relatorio.txt
+**Localização:** Dropbox
+**Operação:** Linha adicionada
+**File ID:** 1LWpgOp-VtDvPRZ8DmuQFta5_rxkuKabw
+```
+
+**Nota:** Operações de edição de arquivos usam o `COMPOSIO_REMOTE_WORKBENCH` (sandbox Python) para baixar, editar e fazer upload do arquivo.
+
 ### Listar Arquivos
 
 ```json
@@ -127,17 +222,33 @@ Content-Type: application/json
 }
 ```
 
-### Workflow Multi-App
+### Workflow Multi-App (usa Workbench)
 
 ```json
 {
   "userId": "user-123",
-  "task": "Busque o arquivo relatorio.csv no Dropbox, conte as linhas e envie um email para gerente@example.com com o total",
+  "task": "Busque o arquivo vendas.csv no Dropbox, calcule o total de vendas e envie um email para gerente@example.com com o resultado",
   "context": {
     "execution_mode": "strict"
   }
 }
 ```
+
+**Resposta:**
+```
+✅ Workflow concluído com sucesso!
+
+**Arquivo analisado:** vendas.csv
+**Total de vendas:** R$ 15.430,00
+**Registros processados:** 247
+
+**Email enviado:**
+**Para:** gerente@example.com
+**Assunto:** Relatório de Vendas
+**Message ID:** 19cea8f2b4c9a123
+```
+
+**Nota:** Workflows complexos que envolvem processamento de dados usam o `COMPOSIO_REMOTE_WORKBENCH` com pandas/numpy para análise.
 
 ## 🏗️ Arquitetura
 
@@ -273,10 +384,11 @@ Salvos em `.checkpoints/` para auditoria e retomada:
 
 ## 📚 Documentação
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Arquitetura detalhada do sistema
-- **[IMPROVEMENTS.md](IMPROVEMENTS.md)** - Documentação das melhorias implementadas
-- **[agent.md](agent.md)** - Instruções para o agente
-- **[examples/](examples/)** - Exemplos de payloads e testes
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Arquitetura detalhada do sistema
+- **[docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md)** - Documentação das melhorias implementadas
+- **[specs/agent.md](specs/agent.md)** - Instruções para o agente executor
+- **[specs/cloud-guide-v2.md](specs/cloud-guide-v2.md)** - Guia de deploy em cloud
+- **[examples/](examples/)** - Exemplos de payloads e testes HTTP
 
 ## 🧪 Testes
 

@@ -1,0 +1,187 @@
+{
+  "session_id": "session_realistic_large_abc123xyz789def456",
+  "primary_tool_slugs": [
+    "GOOGLEDRIVE_FIND_FILE",
+    "GOOGLEDRIVE_DOWNLOAD_FILE",
+    "GOOGLEDRIVE_GET_FILE_METADATA",
+    "GOOGLEDRIVE_UPLOAD_FILE",
+    "GOOGLEDRIVE_EDIT_FILE"
+  ],
+  "related_tool_slugs": [
+    "GOOGLEDRIVE_EXPORT_GOOGLE_WORKSPACE_FILE",
+    "GOOGLEDRIVE_LIST_SHARED_DRIVES",
+    "GOOGLEDRIVE_GET_ABOUT",
+    "GOOGLEDRIVE_LIST_PERMISSIONS",
+    "GOOGLEDRIVE_CREATE_PERMISSION",
+    "GOOGLEDRIVE_DELETE_PERMISSION",
+    "GOOGLEDRIVE_UPDATE_PERMISSION",
+    "GOOGLEDRIVE_LIST_FILES",
+    "GOOGLEDRIVE_COPY_FILE",
+    "GOOGLEDRIVE_DELETE_FILE",
+    "GOOGLEDRIVE_MOVE_FILE",
+    "GOOGLEDRIVE_RENAME_FILE",
+    "GOOGLEDRIVE_CREATE_FOLDER",
+    "GOOGLEDRIVE_LIST_FOLDERS",
+    "GOOGLEDRIVE_SHARE_FILE",
+    "GOOGLEDRIVE_UNSHARE_FILE",
+    "GOOGLEDRIVE_GET_FILE_CONTENT",
+    "GOOGLEDRIVE_UPDATE_FILE_CONTENT",
+    "GOOGLEDRIVE_TRASH_FILE",
+    "GOOGLEDRIVE_RESTORE_FILE"
+  ],
+  "tool_schemas": {
+    "GOOGLEDRIVE_FIND_FILE": {
+      "tool_slug": "GOOGLEDRIVE_FIND_FILE",
+      "description": "Search for files and folders in Google Drive using query parameters. Supports advanced search with operators like 'name contains', 'mimeType =', 'trashed = false', etc. Returns a list of files matching the criteria with their metadata including id, name, mimeType, size, createdTime, modifiedTime, and more.",
+      "hasFullSchema": true,
+      "toolkit": "googledrive",
+      "input_schema": {
+        "type": "object",
+        "required": ["q"],
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Query string for searching files. Use operators like 'name contains', 'mimeType =', 'trashed = false', 'parents in', etc. Example: \"name contains 'report' and trashed = false\""
+          },
+          "pageToken": {
+            "type": "string",
+            "description": "Token for retrieving the next page of results. Use the nextPageToken from the previous response."
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Maximum number of files to return per page. Default is 100, maximum is 1000.",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 100
+          },
+          "corpora": {
+            "type": "string",
+            "description": "Comma-separated list of corpora to search. Possible values: 'user', 'drive', 'allDrives'. Default is 'user'.",
+            "enum": ["user", "drive", "allDrives"]
+          },
+          "includeItemsFromAllDrives": {
+            "type": "boolean",
+            "description": "Whether to include items from all drives. Default is false.",
+            "default": false
+          },
+          "supportsAllDrives": {
+            "type": "boolean",
+            "description": "Whether the requesting application supports both My Drives and shared drives. Default is false.",
+            "default": false
+          },
+          "fields": {
+            "type": "string",
+            "description": "Selector specifying which fields to include in a partial response. Example: 'files(id,name,mimeType)'"
+          },
+          "orderBy": {
+            "type": "string",
+            "description": "Sort order for results. Example: 'modifiedTime desc', 'name', 'createdTime'"
+          },
+          "spaces": {
+            "type": "string",
+            "description": "Comma-separated list of spaces to query. Supported values: 'drive', 'appDataFolder', 'photos'."
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "mimeType": { "type": "string" },
+                "size": { "type": "string" },
+                "createdTime": { "type": "string" },
+                "modifiedTime": { "type": "string" },
+                "webViewLink": { "type": "string" },
+                "webContentLink": { "type": "string" }
+              }
+            }
+          },
+          "nextPageToken": { "type": "string" },
+          "incompleteSearch": { "type": "boolean" }
+        }
+      }
+    },
+    "GOOGLEDRIVE_DOWNLOAD_FILE": {
+      "tool_slug": "GOOGLEDRIVE_DOWNLOAD_FILE",
+      "description": "Download a file from Google Drive. Returns the file content as a downloadable URL (s3url). For Google Workspace files (Docs, Sheets, Slides), use GOOGLEDRIVE_EXPORT_GOOGLE_WORKSPACE_FILE instead.",
+      "hasFullSchema": true,
+      "toolkit": "googledrive",
+      "input_schema": {
+        "type": "object",
+        "required": ["file_id"],
+        "properties": {
+          "file_id": {
+            "type": "string",
+            "description": "The ID of the file to download. Can be obtained from GOOGLEDRIVE_FIND_FILE or other file listing operations."
+          },
+          "mime_type": {
+            "type": "string",
+            "description": "MIME type for export (only for Google Workspace files). Examples: 'application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'"
+          },
+          "acknowledgeAbuse": {
+            "type": "boolean",
+            "description": "Whether the user is acknowledging the risk of downloading known malware or other abusive files. Default is false.",
+            "default": false
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "downloaded_file_content": {
+            "type": "object",
+            "properties": {
+              "s3url": {
+                "type": "string",
+                "description": "Presigned S3 URL to download the file content. Use HTTP GET to retrieve the actual file."
+              },
+              "file_name": { "type": "string" },
+              "file_size": { "type": "integer" },
+              "mime_type": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "connection_status": {
+    "googledrive": {
+      "has_active_connection": true,
+      "toolkit": "googledrive",
+      "connected_account_id": "ca_abc123",
+      "user_email": "user@example.com",
+      "scopes": [
+        "https://www.googleapis.com/auth/drive",
+        "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/drive.readonly"
+      ]
+    }
+  },
+  "recommended_plan": {
+    "steps": [
+      "Step 1: Use COMPOSIO_SEARCH_TOOLS to discover available tools for your use case",
+      "Step 2: Use COMPOSIO_MANAGE_CONNECTIONS to verify authentication status",
+      "Step 3: Use GOOGLEDRIVE_FIND_FILE with query parameter 'q' to search for files",
+      "Step 4: Extract file_id from the search results",
+      "Step 5: Use GOOGLEDRIVE_DOWNLOAD_FILE with the file_id to download content",
+      "Step 6: Process the downloaded content using COMPOSIO_REMOTE_WORKBENCH if needed"
+    ],
+    "estimated_duration": "30-60 seconds",
+    "complexity": "medium"
+  },
+  "pitfalls": [
+    "Remember to add 'and trashed = false' to the query to exclude deleted files",
+    "Use 'contains' instead of exact match for partial name searches",
+    "For Shared Drives, set includeItemsFromAllDrives=true and supportsAllDrives=true",
+    "Download returns s3url, not direct content - use HTTP GET to retrieve",
+    "Google Workspace files require EXPORT instead of DOWNLOAD",
+    "Pagination: use nextPageToken from response for subsequent requests",
+    "Query syntax is case-insensitive for operators but case-sensitive for values"
+  ]
+}

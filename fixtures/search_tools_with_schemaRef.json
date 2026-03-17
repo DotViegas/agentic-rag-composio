@@ -1,0 +1,53 @@
+{
+  "session_id": "session_schemaref_789",
+  "primary_tool_slugs": [
+    "GOOGLEDRIVE_FIND_FILE",
+    "GOOGLEDRIVE_EDIT_FILE"
+  ],
+  "related_tool_slugs": [
+    "GOOGLEDRIVE_UPLOAD_FILE",
+    "GOOGLEDRIVE_COPY_FILE"
+  ],
+  "tool_schemas": {
+    "GOOGLEDRIVE_FIND_FILE": {
+      "tool_slug": "GOOGLEDRIVE_FIND_FILE",
+      "description": "Search for files",
+      "hasFullSchema": true,
+      "toolkit": "googledrive",
+      "input_schema": {
+        "type": "object",
+        "required": ["q"],
+        "properties": {
+          "q": { "type": "string" }
+        }
+      }
+    },
+    "GOOGLEDRIVE_EDIT_FILE": {
+      "tool_slug": "GOOGLEDRIVE_EDIT_FILE",
+      "description": "Edit a file",
+      "hasFullSchema": false,
+      "schemaRef": "googledrive/edit_file",
+      "toolkit": "googledrive"
+    },
+    "GOOGLEDRIVE_UPLOAD_FILE": {
+      "tool_slug": "GOOGLEDRIVE_UPLOAD_FILE",
+      "description": "Upload a file",
+      "hasFullSchema": false,
+      "schemaRef": "googledrive/upload_file",
+      "toolkit": "googledrive"
+    },
+    "GOOGLEDRIVE_COPY_FILE": {
+      "tool_slug": "GOOGLEDRIVE_COPY_FILE",
+      "description": "Copy a file",
+      "hasFullSchema": false,
+      "schemaRef": "googledrive/copy_file",
+      "toolkit": "googledrive"
+    }
+  },
+  "connection_status": {
+    "googledrive": {
+      "has_active_connection": true,
+      "toolkit": "googledrive"
+    }
+  }
+}

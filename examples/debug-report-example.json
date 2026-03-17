@@ -1,0 +1,406 @@
+{
+  "trace_id": "trace_1773687654321_xyz789",
+  "timestamp_start": "2024-03-16T14:30:00.000Z",
+  "timestamp_end": "2024-03-16T14:30:12.500Z",
+  "duration_ms": 12500,
+  "enabled": true,
+  "request": {
+    "user_id": "user_123",
+    "task": "Enviar email para teste@example.com com assunto 'Debug Test'",
+    "context": {},
+    "timestamp": "2024-03-16T14:30:00.000Z"
+  },
+  "phases": {
+    "planning": {
+      "timestamp": "2024-03-16T14:30:00.500Z",
+      "goal": "Enviar email para teste@example.com com assunto 'Debug Test'",
+      "subtasks": [
+        {
+          "id": "subtask_1",
+          "title": "Enviar email para teste@example.com com assunto 'Debug Test'",
+          "intent": "Enviar email para teste@example.com com assunto 'Debug Test' usando ferramentas de email",
+          "toolkit_candidates": ["gmail", "outlook"],
+          "inputs_required": ["destinatario", "assunto"],
+          "outputs_expected": ["message_id"],
+          "success_criteria": "message_id presente na resposta",
+          "risk_flags": {
+            "destrutivo": false,
+            "publico": false,
+            "bulk": false,
+            "admin": false,
+            "financeiro": false
+          },
+          "deps": []
+        }
+      ],
+      "clarifying_questions": [],
+      "global_success_criteria": "Email enviado com sucesso",
+      "stop_conditions": [],
+      "agent_instructions_length": 15234
+    },
+    "execution": {
+      "timestamp": "2024-03-16T14:30:02.000Z",
+      "execution_mode": "normal",
+      "artifacts": {
+        "subtask_1": {
+          "message_id": "19cea79d0389d430"
+        }
+      },
+      "checkpoints_count": 1,
+      "tool_calls_count": 3,
+      "errors_count": 0,
+      "current_subtask_index": 0,
+      "status": "completed"
+    },
+    "verification": {
+      "timestamp": "2024-03-16T14:30:11.000Z",
+      "success": true,
+      "failures": [],
+      "warnings": [],
+      "artifacts_collected": {
+        "message_id": "19cea79d0389d430"
+      },
+      "evidence": [
+        {
+          "subtask": "Enviar email para teste@example.com com assunto 'Debug Test'",
+          "artifact": "message_id",
+          "value": "19cea79d0389d430"
+        }
+      ],
+      "final_state": {
+        "artifacts": {
+          "subtask_1": {
+            "message_id": "19cea79d0389d430"
+          }
+        },
+        "checkpoints": [
+          {
+            "timestamp": "2024-03-16T14:30:10.000Z",
+            "subtask_id": "subtask_1",
+            "data": {
+              "status": "completed",
+              "artifacts": {
+                "message_id": "19cea79d0389d430"
+              },
+              "outputs": {
+                "raw_output": "Email enviado com sucesso para teste@example.com"
+              },
+              "tool_calls": [],
+              "duration_ms": 8000,
+              "retries": 0
+            }
+          }
+        ],
+        "tool_calls": [],
+        "errors": []
+      }
+    }
+  },
+  "llm_calls": [
+    {
+      "timestamp": "2024-03-16T14:30:00.500Z",
+      "phase": "planning",
+      "model": "gpt-4o-mini",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Você é um planejador de tarefas especializado. Retorne apenas JSON válido."
+        },
+        {
+          "role": "user",
+          "content": "TAREFA DO USUÁRIO:\n\"Enviar email para teste@example.com com assunto 'Debug Test'\"\n\nINSTRUÇÕES DE PLANEJAMENTO:\nVocê DEVE produzir um plano estruturado em JSON seguindo EXATAMENTE este formato:\n\n{...}"
+        }
+      ],
+      "response": {
+        "id": "chatcmpl-abc123",
+        "object": "chat.completion",
+        "created": 1710598200,
+        "model": "gpt-4o-mini",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"goal\":\"Enviar email para teste@example.com com assunto 'Debug Test'\",\"subtasks\":[{\"id\":\"subtask_1\",\"title\":\"Enviar email para teste@example.com com assunto 'Debug Test'\",\"toolkit_candidates\":[\"gmail\",\"outlook\"],\"intent\":\"Enviar email para teste@example.com com assunto 'Debug Test' usando ferramentas de email\",\"deps\":[],\"inputs_required\":[\"destinatario\",\"assunto\"],\"outputs_expected\":[\"message_id\"],\"success_criteria\":\"message_id presente na resposta\",\"risk_flags\":{\"destrutivo\":false,\"publico\":false,\"bulk\":false,\"admin\":false,\"financeiro\":false}}],\"clarifying_questions\":[],\"global_success_criteria\":\"Email enviado com sucesso\",\"stop_conditions\":[]}"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1234,
+          "completion_tokens": 456,
+          "total_tokens": 1690
+        }
+      },
+      "duration_ms": 1500,
+      "tokens": {
+        "prompt": 1234,
+        "completion": 456,
+        "total": 1690
+      }
+    },
+    {
+      "timestamp": "2024-03-16T14:30:11.500Z",
+      "phase": "response_formatting",
+      "model": "gpt-4o-mini",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Você é um formatador de respostas. Retorne apenas a resposta formatada para o usuário final."
+        },
+        {
+          "role": "user",
+          "content": "Você é um formatador de respostas para usuários.\n\nSOLICITAÇÃO DO USUÁRIO:\n\"Enviar email para teste@example.com com assunto 'Debug Test'\"\n\nOBJETIVO DA TAREFA:\nEnviar email para teste@example.com com assunto 'Debug Test'\n\nRESPOSTA DO AGENTE:\nEmail enviado com sucesso para teste@example.com\n\nARTEFATOS COLETADOS:\n{\"message_id\":\"19cea79d0389d430\"}\n\nINSTRUÇÕES:\n1. Analise se o objetivo foi alcançado\n2. Extraia APENAS as informações relevantes para o usuário\n3. Formate de forma clara e natural\n..."
+        }
+      ],
+      "response": {
+        "id": "chatcmpl-def456",
+        "object": "chat.completion",
+        "created": 1710598211,
+        "model": "gpt-4o-mini",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "✅ Email enviado com sucesso!\n\n**Destinatário:** teste@example.com\n**Assunto:** Debug Test\n**Message ID:** 19cea79d0389d430"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 567,
+          "completion_tokens": 89,
+          "total_tokens": 656
+        }
+      },
+      "duration_ms": 800,
+      "tokens": {
+        "prompt": 567,
+        "completion": 89,
+        "total": 656
+      }
+    }
+  ],
+  "tool_calls": [
+    {
+      "timestamp": "2024-03-16T14:30:03.000Z",
+      "tool_name": "COMPOSIO_SEARCH_TOOLS",
+      "arguments": {
+        "use_case": "Enviar email para teste@example.com com assunto 'Debug Test'"
+      },
+      "result": {
+        "session_id": "session_abc123",
+        "candidate_tools": [
+          "GMAIL_SEND_EMAIL",
+          "OUTLOOK_SEND_EMAIL"
+        ],
+        "tool_schemas": {
+          "GMAIL_SEND_EMAIL": {
+            "name": "GMAIL_SEND_EMAIL",
+            "description": "Send an email using Gmail",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "to": {
+                  "type": "string",
+                  "description": "Recipient email address"
+                },
+                "subject": {
+                  "type": "string",
+                  "description": "Email subject"
+                },
+                "body": {
+                  "type": "string",
+                  "description": "Email body"
+                }
+              },
+              "required": ["to", "subject"]
+            }
+          }
+        },
+        "connections": {
+          "gmail": "ACTIVE",
+          "outlook": "NOT_CONNECTED"
+        }
+      },
+      "error": null,
+      "duration_ms": 1200,
+      "metadata": {
+        "iteration": 1,
+        "subtask_id": "subtask_1",
+        "phase": "search"
+      }
+    },
+    {
+      "timestamp": "2024-03-16T14:30:05.000Z",
+      "tool_name": "COMPOSIO_MANAGE_CONNECTIONS",
+      "arguments": {
+        "toolkit": "gmail"
+      },
+      "result": {
+        "status": "ACTIVE",
+        "toolkit": "gmail",
+        "connected_account_id": "ca_gmail_123"
+      },
+      "error": null,
+      "duration_ms": 500,
+      "metadata": {
+        "iteration": 2,
+        "subtask_id": "subtask_1",
+        "phase": "auth"
+      }
+    },
+    {
+      "timestamp": "2024-03-16T14:30:07.000Z",
+      "tool_name": "COMPOSIO_EXECUTE_TOOL",
+      "arguments": {
+        "tool_slug": "GMAIL_SEND_EMAIL",
+        "arguments": {
+          "to": "teste@example.com",
+          "subject": "Debug Test",
+          "body": ""
+        }
+      },
+      "result": {
+        "success": true,
+        "data": {
+          "message_id": "19cea79d0389d430",
+          "thread_id": "thread_xyz789"
+        }
+      },
+      "error": null,
+      "duration_ms": 3000,
+      "metadata": {
+        "iteration": 3,
+        "subtask_id": "subtask_1",
+        "phase": "execute"
+      }
+    }
+  ],
+  "checkpoints": [
+    {
+      "timestamp": "2024-03-16T14:30:10.000Z",
+      "subtask_id": "subtask_1",
+      "data": {
+        "status": "completed",
+        "artifacts": {
+          "message_id": "19cea79d0389d430"
+        },
+        "outputs": {
+          "raw_output": "Email enviado com sucesso para teste@example.com"
+        },
+        "tool_calls": [],
+        "duration_ms": 8000,
+        "retries": 0
+      }
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "logs": [
+    {
+      "timestamp": "2024-03-16T14:30:00.000Z",
+      "level": "info",
+      "message": "🐛 Debug mode ATIVADO - Capturando execução completa",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:00.100Z",
+      "level": "info",
+      "message": "Requisição capturada: userId=user_123, task=\"Enviar email para teste@example.com com assunto 'Debug Test'\"",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:02.000Z",
+      "level": "info",
+      "message": "Planejamento capturado: 1 subtarefas",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:02.500Z",
+      "level": "info",
+      "message": "LLM call capturada: planning, model=gpt-4o-mini, tokens=1690",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:04.200Z",
+      "level": "info",
+      "message": "Tool call capturada: COMPOSIO_SEARCH_TOOLS - SUCCESS (1200ms)",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:05.500Z",
+      "level": "info",
+      "message": "Tool call capturada: COMPOSIO_MANAGE_CONNECTIONS - SUCCESS (500ms)",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:10.000Z",
+      "level": "info",
+      "message": "Tool call capturada: COMPOSIO_EXECUTE_TOOL - SUCCESS (3000ms)",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:10.100Z",
+      "level": "info",
+      "message": "Checkpoint capturado: subtask_1, status=completed",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:10.500Z",
+      "level": "info",
+      "message": "Execução capturada: 1 checkpoints, 0 erros",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:11.000Z",
+      "level": "info",
+      "message": "Verificação capturada: success=true",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:12.000Z",
+      "level": "info",
+      "message": "LLM call capturada: response_formatting, model=gpt-4o-mini, tokens=656",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:12.500Z",
+      "level": "info",
+      "message": "Resposta final capturada",
+      "data": null
+    },
+    {
+      "timestamp": "2024-03-16T14:30:12.600Z",
+      "level": "info",
+      "message": "🎯 Debug finalizado: .debug/debug_trace_1773687654321_xyz789.json",
+      "data": null
+    }
+  ],
+  "final_response": {
+    "status": 200,
+    "response-ai": "Tarefa concluída com sucesso",
+    "message": "✅ Email enviado com sucesso!\n\n**Destinatário:** teste@example.com\n**Assunto:** Debug Test\n**Message ID:** 19cea79d0389d430"
+  },
+  "statistics": {
+    "total_llm_calls": 2,
+    "total_tool_calls": 3,
+    "total_checkpoints": 1,
+    "total_errors": 0,
+    "total_warnings": 0,
+    "total_logs": 13,
+    "total_tokens": 2346,
+    "duration_seconds": "12.50"
+  },
+  "metadata": {
+    "node_version": "v20.10.0",
+    "platform": "linux",
+    "memory_usage": {
+      "rss": "125.50 MB",
+      "heap_total": "65.25 MB",
+      "heap_used": "48.30 MB",
+      "external": "1.85 MB"
+    }
+  }
+}

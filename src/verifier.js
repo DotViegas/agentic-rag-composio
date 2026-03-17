@@ -6,9 +6,10 @@
 import { ResponseFormatter } from './response-formatter.js';
 
 export class TaskVerifier {
-  constructor(logger, openai) {
+  constructor(logger, openai, debugManager = null) {
     this.logger = logger;
     this.openai = openai;
+    this.debugManager = debugManager;
   }
 
   async verifyAndRespond(state, plan, userTask) {
@@ -153,7 +154,7 @@ export class TaskVerifier {
     
     // Usar LLM para formatar resposta
     try {
-      const formatter = new ResponseFormatter(this.openai, this.logger);
+      const formatter = new ResponseFormatter(this.openai, this.logger, this.debugManager);
       const formattedResponse = await formatter.formatResponse(
         userTask,
         plan.goal,

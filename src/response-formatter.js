@@ -4,9 +4,10 @@
  */
 
 export class ResponseFormatter {
-  constructor(openai, logger) {
+  constructor(openai, logger, debugManager = null) {
     this.openai = openai;
     this.logger = logger;
+    this.debugManager = debugManager;
   }
 
   async formatResponse(userTask, goal, agentOutput, artifacts) {
@@ -68,6 +69,8 @@ Para "criar arquivo":
 Retorne APENAS a resposta formatada, sem explicações adicionais.`;
 
     try {
+      const startTime = Date.now();
+      
       const response = await this.openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -83,6 +86,28 @@ Retorne APENAS a resposta formatada, sem explicações adicionais.`;
         temperature: 0.3,
         max_tokens: 1000
       });
+
+      const duration = Date.now() - startTime;
+      
+      // Capturar LLM call no debug
+      if (this.debugManager) {
+        this.debugManager.captureLLMCall(
+          'response_formatting',
+          'gpt-4o-mini',
+          [
+            { 
+              role: 'system', 
+              content: 'Você é um formatador de respostas. Retorne apenas a resposta formatada para o usuário final.' 
+            },
+            { 
+              role: 'user', 
+              content: prompt 
+            }
+          ],
+          response,
+          duration
+        );
+      }
 
       const formattedResponse = response.choices[0].message.content;
       

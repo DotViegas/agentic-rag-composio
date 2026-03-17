@@ -10,7 +10,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { Logger } from './logger.js';
-import { TaskPlanner } from './planner.js';
+import { DebugManager } from './debug-manager.js';
+import { HybridTaskPlanner } from './planner-hybrid.js';
 import { EnhancedTaskExecutor } from './executor-enhanced.js';
 import { TaskVerifier } from './verifier.js';
 import { ExecutionState, ExecutionMode } from './types.js';
@@ -18,15 +19,28 @@ import { ExecutionState, ExecutionMode } from './types.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Carregar instruções do agente
+// Carregar instruções do agente (gerais + multi-nuvem)
 const agentInstructions = fs.readFileSync(
-  path.join(__dirname, '..', 'agent.md'),
+  path.join(__dirname, '..', 'specs', 'agent.md'),
   'utf-8'
 );
+
+const cloudGuide = fs.readFileSync(
+  path.join(__dirname, '..', 'specs', 'cloud-guide-v2.md'),
+  'utf-8'
+);
+
+// Combinar instruções
+const combinedInstructions = `${agentInstructions}
+
+---
+
+${cloudGuide}`;
 
 export class ComposioOrchestrator {
   constructor(composioApiKey, openaiApiKey) {
     this.composio = new Composio({ apiKey: composioApiKey });
+    this.composioApiKey = composioApiKey; // Armazenar para passar ao planner
     this.openai = new OpenAI({ apiKey: openaiApiKey });
     this.sessions = new Map();
   }
@@ -44,9 +58,17 @@ export class ComposioOrchestrator {
   async executeTask(userId, task, context = {}) {
     const state = new ExecutionState();
     const logger = new Logger(state.trace_id);
+    
+    // Inicializar Debug Manager
+    const debugEnabled = process.env.DEBUG === 'true';
+    const debugManager = new DebugManager(state.trace_id, debugEnabled);
+    
     let executionMode = ExecutionMode.NORMAL; // Declarar aqui para estar disponível no catch
 
     try {
+      // Capturar requisição inicial
+      debugManager.captureRequest(userId, task, context);
+      
       logger.userMessage(task);
       logger.trace(`Iniciando execução - Trace ID: ${state.trace_id}`);
 
@@ -60,8 +82,11 @@ export class ComposioOrchestrator {
       logger.success('Sessão criada/recuperada');
       logger.field('User ID', userId);
 
-      const planner = new TaskPlanner(this.openai);
-      const plan = await planner.planTask(task, context, agentInstructions);
+      const planner = new HybridTaskPlanner(this.openai, debugManager, this.composioApiKey);
+      const plan = await planner.planTask(task, context, combinedInstructions, userId);
+
+      // Capturar planejamento
+      debugManager.capturePlanning(plan, combinedInstructions);
 
       logger.success('Plano gerado');
       logger.field('Objetivo', plan.goal);
@@ -97,11 +122,17 @@ export class ComposioOrchestrator {
           .map((q, i) => `${i + 1}. ${q}`)
           .join('\n');
         
-        return {
+        const response = {
           status: 200,
           'response-ai': 'Preciso de mais informações para continuar',
           message: `Para continuar com a tarefa, preciso que você responda:\n\n${questionsText}`
         };
+        
+        // Capturar resposta final
+        debugManager.captureFinalResponse(response);
+        await debugManager.finalize();
+        
+        return response;
       }
 
       // Determinar modo de execução
@@ -133,11 +164,17 @@ export class ComposioOrchestrator {
         
         logger.info('Aguardando confirmação do usuário para prosseguir');
         
-        return {
+        const response = {
           status: 200,
           'response-ai': 'Confirmação necessária para operações de risco',
           message: confirmationMessage
         };
+        
+        // Capturar resposta final
+        debugManager.captureFinalResponse(response);
+        await debugManager.finalize();
+        
+        return response;
       }
       
       // Se chegou aqui, ou não há riscos, ou usuário já confirmou
@@ -151,8 +188,11 @@ export class ComposioOrchestrator {
       logger.phase('FASE 2: EXECUÇÃO COM PLANO');
       state.status = 'executing';
 
-      const executor = new EnhancedTaskExecutor(session, logger, executionMode, userId);
-      await executor.executeWithPlan(plan, state, agentInstructions, hasUserConfirmation);
+      const executor = new EnhancedTaskExecutor(session, logger, executionMode, userId, debugManager);
+      await executor.executeWithPlan(plan, state, combinedInstructions, hasUserConfirmation);
+
+      // Capturar execução
+      debugManager.captureExecution(state, executionMode);
 
       logger.success('Execução concluída');
 
@@ -161,8 +201,11 @@ export class ComposioOrchestrator {
       // ============================================================
       state.status = 'verifying';
       
-      const verifier = new TaskVerifier(logger, this.openai);
+      const verifier = new TaskVerifier(logger, this.openai, debugManager);
       const verification = await verifier.verifyAndRespond(state, plan, task);
+
+      // Capturar verificação
+      debugManager.captureVerification(verification.verification, state);
 
       // ============================================================
       // RESPOSTA FINAL
@@ -177,15 +220,25 @@ export class ComposioOrchestrator {
       logger.field('Erros', state.errors.length);
       logger.field('Confirmações', state.confirmations.length);
 
-      return {
+      const finalResponse = {
         status: 200,
         'response-ai': verification.success ? 
           'Tarefa concluída com sucesso' : 
           'Tarefa concluída com avisos',
         message: verification.response
       };
+      
+      // Capturar resposta final
+      debugManager.captureFinalResponse(finalResponse);
+      
+      // Finalizar debug e salvar relatório
+      await debugManager.finalize();
 
+      return finalResponse;
     } catch (error) {
+      // Capturar erro
+      debugManager.captureError('orchestrator', error, { userId, task, context });
+      
       logger.separator(error.errorType === 'AUTH' && error.needsUserAction ? 
         '🔐 AUTENTICAÇÃO NECESSÁRIA' : 
         '❌ ERRO NA EXECUÇÃO'
@@ -195,11 +248,17 @@ export class ComposioOrchestrator {
         logger.warning('A execução foi pausada porque é necessário autenticar uma conta');
         logger.field('Link de autenticação', error.authUrl);
         
-        return {
+        const response = {
           status: 200,
           'response-ai': 'O usuário deve se conectar para que eu continue com a tarefa',
           message: error.message
         };
+        
+        // Capturar resposta final
+        debugManager.captureFinalResponse(response);
+        await debugManager.finalize();
+        
+        return response;
       }
       
       // Erro real
@@ -211,11 +270,17 @@ export class ComposioOrchestrator {
       state.status = 'failed';
       state.addError('orchestrator', error);
 
-      return {
+      const errorResponse = {
         status: 500,
         'response-ai': 'Ocorreu um erro durante a execução da tarefa',
         message: error.message
       };
+      
+      // Capturar resposta final
+      debugManager.captureFinalResponse(errorResponse);
+      await debugManager.finalize();
+
+      return errorResponse;
     }
   }
 

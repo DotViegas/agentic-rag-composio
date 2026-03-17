@@ -4,3 +4,11 @@ node_modules/
 .DS_Store
 dist/
 .checkpoints/
+.debug/
+temp/
+.cache/
+
+# Test outputs
+test-plan-*.json
+search-result-*.json
+test-search-tools-direct-*.json

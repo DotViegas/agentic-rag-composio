@@ -1,0 +1,293 @@
+### Teste 1: Editar Arquivo no Google Drive (Cópia Versionada - Seguro)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-001",
+  "task": "Edite o arquivo 'relatorio.txt' no Google Drive adicionando a linha 'Revisado em 14/03/2026' no final",
+  "context": {
+    "additionalContext": "Criar cópia versionada (não sobrescrever o original)"
+  }
+}
+
+###
+
+### Teste 2: Editar Arquivo no OneDrive (Cópia Versionada - Seguro)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-002",
+  "task": "Modifique o arquivo 'config.json' no OneDrive alterando o campo 'version' para '2.0.0'",
+  "context": {
+    "additionalContext": "Manter o original intacto, criar nova versão"
+  }
+}
+
+###
+
+### Teste 3: Editar Arquivo no Dropbox (Sobrescrever - Destrutivo)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-003",
+  "task": "Sobrescreva o arquivo 'notas.txt' no Dropbox adicionando 'Atualizado'",
+  "context": {
+    "additionalContext": "Confirmo que quero sobrescrever o arquivo original",
+    "confirmed": true
+  }
+}
+
+###
+
+### Teste 4: Processar CSV do Google Drive
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-004",
+  "task": "Baixe o arquivo 'vendas.csv' do Google Drive, adicione uma coluna 'total' calculando quantidade * preço, e salve como 'vendas_processadas.csv'",
+  "context": {
+    "additionalContext": "Criar novo arquivo, não modificar o original"
+  }
+}
+
+###
+
+### Teste 5: Editar XLSX no OneDrive
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-005",
+  "task": "No arquivo 'planilha.xlsx' do OneDrive, adicione uma nova linha com os dados: Nome='João', Idade=30, Cidade='São Paulo'",
+  "context": {
+    "additionalContext": "Criar cópia versionada"
+  }
+}
+
+###
+
+### Teste 6: Editar DOCX no Google Drive
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-006",
+  "task": "Adicione um parágrafo no final do documento 'relatorio.docx' no Google Drive com o texto 'Conclusão: Projeto aprovado'",
+  "context": {
+    "additionalContext": "Preservar formatação original"
+  }
+}
+
+###
+
+### Teste 7: Transformar JSON no Dropbox
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-007",
+  "task": "Baixe 'dados.json' do Dropbox, converta o array em objeto indexado por ID, e salve como 'dados_indexed.json'",
+  "context": {
+    "additionalContext": "Criar novo arquivo"
+  }
+}
+
+###
+
+### Teste 8: Editar Múltiplos Arquivos no Google Drive (Bulk)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-008",
+  "task": "Adicione um cabeçalho '# Atualizado em 14/03/2026' em todos os arquivos .txt da pasta 'Documentos' no Google Drive",
+  "context": {
+    "additionalContext": "Criar cópias versionadas de cada arquivo"
+  }
+}
+
+###
+
+### Teste 9: Buscar e Editar Arquivo por Nome (Google Drive)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-009",
+  "task": "Busque o arquivo que contém 'relatorio' no nome no Google Drive e adicione a data de hoje no final",
+  "context": {
+    "additionalContext": "Se houver múltiplos arquivos, pergunte qual editar"
+  }
+}
+
+###
+
+### Teste 10: Editar Arquivo via Link Compartilhado
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-010",
+  "task": "Edite o arquivo neste link: https://drive.google.com/file/d/1LWpgOp-VtDvPRZ8DmuQFta5_rxkuKabw/view adicionando 'Revisado'",
+  "context": {
+    "additionalContext": "Inferir provedor pelo link (Google Drive)"
+  }
+}
+
+###
+
+### Teste 11: Validação Antes de Sobrescrever (Deve Pedir Confirmação)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-011",
+  "task": "Sobrescreva o arquivo 'importante.txt' no Dropbox com novo conteúdo",
+  "context": {
+    "additionalContext": "Operação destrutiva - deve pedir confirmação"
+  }
+}
+
+###
+
+### Teste 12: Editar PDF (Extração + Novo PDF)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-012",
+  "task": "Extraia o texto do arquivo 'documento.pdf' no Google Drive e crie um novo arquivo 'documento_texto.txt' com o conteúdo",
+  "context": {
+    "additionalContext": "PDF não pode ser editado diretamente, apenas extrair texto"
+  }
+}
+
+###
+
+### Teste 13: Processar Imagem no OneDrive
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-013",
+  "task": "Redimensione a imagem 'foto.jpg' no OneDrive para 800x600 pixels e salve como 'foto_redimensionada.jpg'",
+  "context": {
+    "additionalContext": "Preservar qualidade, criar novo arquivo"
+  }
+}
+
+###
+
+### Teste 14: Workflow Multi-Nuvem
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-014",
+  "task": "Baixe 'dados.csv' do Google Drive, processe com pandas calculando estatísticas, e faça upload do relatório para o Dropbox como 'relatorio_estatisticas.txt'",
+  "context": {
+    "additionalContext": "Workflow entre duas nuvens diferentes"
+  }
+}
+
+###
+
+### Teste 15: Editar com Validação de Diff
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-015",
+  "task": "No arquivo 'config.json' do Google Drive, altere 'debug': false para 'debug': true e mostre o diff antes de salvar",
+  "context": {
+    "additionalContext": "Mostrar resumo de mudanças antes de confirmar"
+  }
+}
+
+###
+
+### Teste 16: Editar Preservando Encoding
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-016",
+  "task": "Adicione caracteres especiais 'São Paulo - Ação' no arquivo 'texto.txt' do Dropbox",
+  "context": {
+    "additionalContext": "Preservar encoding UTF-8"
+  }
+}
+
+###
+
+### Teste 17: Editar YAML no Google Drive
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-017",
+  "task": "No arquivo 'config.yaml' do Google Drive, adicione uma nova chave 'environment: production'",
+  "context": {
+    "additionalContext": "Preservar formatação YAML"
+  }
+}
+
+###
+
+### Teste 18: Buscar, Validar e Editar
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-018",
+  "task": "Busque o arquivo 'vendas.csv' no OneDrive, valide que tem as colunas 'produto' e 'valor', e adicione uma coluna 'categoria'",
+  "context": {
+    "additionalContext": "Validar estrutura antes de editar"
+  }
+}
+
+###
+
+### Teste 19: Editar com Backup Automático
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-019",
+  "task": "Edite o arquivo 'dados_criticos.json' no Google Drive alterando valores, mas crie um backup antes",
+  "context": {
+    "additionalContext": "Criar backup com sufixo _backup antes de editar"
+  }
+}
+
+###
+
+### Teste 20: Operação Simples (NÃO deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-multinuvem-020",
+  "task": "Liste os 10 primeiros arquivos da pasta 'Documentos' no Google Drive",
+  "context": {
+    "additionalContext": "Operação simples de listagem, não precisa Workbench"
+  }
+}
+
+###
+
+### Debug: Ver Plano Gerado
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-debug-multinuvem",
+  "task": "Edite o arquivo teste.txt no Google Drive",
+  "context": {
+    "debug": true,
+    "additionalContext": "Ver se planner detecta workbench e flags de segurança"
+  }
+}

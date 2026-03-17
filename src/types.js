@@ -29,6 +29,7 @@ export class Subtask {
       admin: false,
       financeiro: false
     };
+    this.metadata = data.metadata || {};
   }
 
   hasRisks() {

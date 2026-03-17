@@ -1,0 +1,84 @@
+### Teste do Sistema de Debug
+### Certifique-se de ter DEBUG=true no .env antes de executar
+
+### 1. Teste simples - Enviar email
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "debug_test_user",
+  "task": "Enviar email para teste@example.com com assunto 'Debug Test' e corpo 'Testando sistema de debug'"
+}
+
+###
+
+### 2. Teste com múltiplas subtarefas - Buscar e processar
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "debug_test_user",
+  "task": "Listar os 3 últimos emails não lidos e me dizer quem enviou"
+}
+
+###
+
+### 3. Teste com erro proposital - Toolkit não conectado
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "debug_test_user",
+  "task": "Criar uma issue no GitHub com título 'Debug Test'"
+}
+
+###
+
+### 4. Teste com operação complexa - Workbench
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "debug_test_user",
+  "task": "Buscar arquivo 'relatorio.csv' no Google Drive, processar os dados e criar um resumo"
+}
+
+###
+
+### 5. Teste com confirmação - Operação de risco
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "debug_test_user",
+  "task": "Deletar todos os emails com assunto 'spam' da minha caixa de entrada",
+  "context": {
+    "execution_mode": "strict"
+  }
+}
+
+###
+
+### 6. Health check
+GET http://localhost:3000/health
+
+###
+
+### 7. Limpar sessão após testes
+DELETE http://localhost:3000/session/debug_test_user
+
+###
+
+### INSTRUÇÕES:
+### 1. Configure DEBUG=true no .env
+### 2. Reinicie o servidor: npm start
+### 3. Execute um dos testes acima
+### 4. Aguarde a conclusão
+### 5. Verifique o console para ver o caminho do relatório
+### 6. Abra o arquivo JSON em .debug/ para análise completa
+###
+### EXEMPLO DE ANÁLISE:
+### cat .debug/debug_trace_*.json | jq '.statistics'
+### cat .debug/debug_trace_*.json | jq '.llm_calls | length'
+### cat .debug/debug_trace_*.json | jq '.tool_calls | length'
+### cat .debug/debug_trace_*.json | jq '.phases.planning.subtasks | length'

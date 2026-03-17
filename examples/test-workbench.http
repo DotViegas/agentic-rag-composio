@@ -1,0 +1,152 @@
+### Teste 1: Edição de Arquivo no Dropbox (deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-workbench-001",
+  "task": "Edite o arquivo 'relatorio.txt' no Dropbox adicionando a linha 'Atualizado em 14/03/2026' no final do arquivo",
+  "context": {
+    "additionalContext": "O arquivo está na pasta raiz do Dropbox"
+  }
+}
+
+###
+
+### Teste 2: Processar CSV e Enviar Relatório (deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-workbench-002",
+  "task": "Baixe o arquivo 'vendas.csv' do Google Drive, calcule o total de vendas usando pandas e envie um relatório por email para gerente@empresa.com",
+  "context": {
+    "additionalContext": "O CSV tem colunas: data, produto, valor"
+  }
+}
+
+###
+
+### Teste 3: Operação Bulk em Emails (deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-workbench-003",
+  "task": "Classifique todos os emails não lidos do Gmail e aplique labels apropriadas (Urgente, Importante, Newsletter)",
+  "context": {
+    "additionalContext": "Processar até 50 emails. Use LLM para classificação."
+  }
+}
+
+###
+
+### Teste 4: Modificar Arquivo no Google Drive (deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-workbench-004",
+  "task": "Modifique o arquivo 'config.json' no Google Drive alterando o valor da chave 'version' para '2.0.0'",
+  "context": {
+    "additionalContext": "Manter o resto do JSON intacto"
+  }
+}
+
+###
+
+### Teste 5: Análise de Dados com Visualização (deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-workbench-005",
+  "task": "Busque os últimos 100 commits do GitHub no repositório 'myorg/myrepo', crie um gráfico de commits por dia e envie no Slack canal #dev",
+  "context": {
+    "additionalContext": "Use matplotlib para o gráfico"
+  }
+}
+
+###
+
+### Teste 6: Enviar Email Simples (NÃO deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-workbench-006",
+  "task": "Envie um email para teste@example.com com assunto 'Teste' e corpo 'Mensagem de teste'",
+  "context": {
+    "additionalContext": "Email simples, sem anexos"
+  }
+}
+
+###
+
+### Teste 7: Criar Issue no GitHub (NÃO deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-workbench-007",
+  "task": "Crie uma issue no GitHub no repositório 'myorg/myrepo' com título 'Bug no login' e descrição 'Usuários não conseguem fazer login'",
+  "context": {
+    "additionalContext": "Adicionar label 'bug'"
+  }
+}
+
+###
+
+### Teste 8: Transformar Dados JSON (deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-workbench-008",
+  "task": "Baixe o arquivo 'dados.json' do Dropbox, transforme o formato de array para objeto indexado por ID e faça upload do resultado como 'dados-transformados.json'",
+  "context": {
+    "additionalContext": "Usar Python para transformação"
+  }
+}
+
+###
+
+### Teste 9: Atualizar Múltiplos Arquivos (deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-workbench-009",
+  "task": "Atualize todos os arquivos .txt na pasta /documentos do Dropbox adicionando um cabeçalho com a data atual",
+  "context": {
+    "additionalContext": "Operação bulk em múltiplos arquivos"
+  }
+}
+
+###
+
+### Teste 10: Workflow Complexo Multi-Step (deve usar Workbench)
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-workbench-010",
+  "task": "Baixe o arquivo 'clientes.csv' do Google Drive, filtre apenas clientes ativos, calcule estatísticas (total, média de compras), gere um relatório PDF e envie por email para diretoria@empresa.com",
+  "context": {
+    "additionalContext": "Workflow completo: download → processamento → análise → geração de PDF → envio"
+  }
+}
+
+###
+
+### Verificar Plano Gerado (Debug)
+# Use este endpoint para ver o plano sem executar
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test-debug",
+  "task": "Edite o arquivo teste.txt no Dropbox",
+  "context": {
+    "debug": true
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "session_id": "session_multi_xyz456",
+  "primary_tool_slugs": [
+    "GOOGLEDRIVE_FIND_FILE",
+    "GMAIL_SEND_EMAIL",
+    "SLACK_SEND_MESSAGE"
+  ],
+  "related_tool_slugs": [
+    "GOOGLEDRIVE_DOWNLOAD_FILE",
+    "GMAIL_GET_MESSAGE",
+    "SLACK_LIST_CHANNELS",
+    "GITHUB_CREATE_ISSUE",
+    "NOTION_CREATE_PAGE"
+  ],
+  "tool_schemas": {
+    "GOOGLEDRIVE_FIND_FILE": {
+      "tool_slug": "GOOGLEDRIVE_FIND_FILE",
+      "description": "Search for files in Google Drive",
+      "hasFullSchema": true,
+      "toolkit": "googledrive",
+      "input_schema": {
+        "type": "object",
+        "required": ["q"],
+        "properties": {
+          "q": { "type": "string" },
+          "pageToken": { "type": "string" },
+          "pageSize": { "type": "integer" }
+        }
+      }
+    },
+    "GMAIL_SEND_EMAIL": {
+      "tool_slug": "GMAIL_SEND_EMAIL",
+      "description": "Send an email via Gmail",
+      "hasFullSchema": true,
+      "toolkit": "gmail",
+      "input_schema": {
+        "type": "object",
+        "required": ["to", "subject", "body"],
+        "properties": {
+          "to": { "type": "string" },
+          "subject": { "type": "string" },
+          "body": { "type": "string" },
+          "cc": { "type": "string" },
+          "bcc": { "type": "string" }
+        }
+      }
+    },
+    "SLACK_SEND_MESSAGE": {
+      "tool_slug": "SLACK_SEND_MESSAGE",
+      "description": "Send a message to Slack",
+      "hasFullSchema": true,
+      "toolkit": "slack",
+      "input_schema": {
+        "type": "object",
+        "required": ["channel", "text"],
+        "properties": {
+          "channel": { "type": "string" },
+          "text": { "type": "string" }
+        }
+      }
+    },
+    "GITHUB_CREATE_ISSUE": {
+      "tool_slug": "GITHUB_CREATE_ISSUE",
+      "description": "Create a GitHub issue",
+      "hasFullSchema": false,
+      "schemaRef": "github/create_issue",
+      "toolkit": "github"
+    }
+  },
+  "connection_status": {
+    "googledrive": {
+      "has_active_connection": true,
+      "toolkit": "googledrive"
+    },
+    "gmail": {
+      "has_active_connection": false,
+      "toolkit": "gmail"
+    },
+    "slack": {
+      "has_active_connection": true,
+      "toolkit": "slack"
+    },
+    "github": {
+      "has_active_connection": false,
+      "toolkit": "github"
+    }
+  }
+}
