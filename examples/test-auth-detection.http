@@ -1,0 +1,41 @@
+### Teste de Detecção de Falta de Conexão
+### Este teste verifica se o sistema detecta corretamente quando uma conta não está conectada
+### e para a execução das subtarefas, retornando o link de autenticação
+
+POST http://localhost:3000/execute
+Content-Type: application/json
+
+{
+  "userId": "test_user_auth",
+  "task": "Buscar o arquivo 'Relatório Mensal.xlsx' no Google Drive e enviar por email para joao@example.com"
+}
+
+### Fluxo esperado:
+### 1. Agente planeja subtarefas
+### 2. Subtarefa 1: Buscar arquivo no Google Drive
+###    - Agente chama COMPOSIO_MANAGE_CONNECTIONS(toolkit="googledrive", action="check")
+###    - Composio retorna link de autenticação (se não conectado)
+###    - Agente retorna JSON estruturado com auth_url
+### 3. Sistema detecta auth_url nos artefatos
+### 4. Sistema para execução (não executa subtarefas seguintes)
+### 5. Sistema retorna resposta com link de autenticação
+
+### Resposta esperada:
+### - Status: 200
+### - response-ai: "Autenticação necessária para continuar"
+### - message: Contém link de autenticação (https://connect.composio.dev/...)
+### - Subtarefas param de executar após detectar falta de conexão
+### - Checkpoint salvo com status "pending_auth"
+
+### Exemplo de resposta do agente (JSON estruturado):
+### {
+###   "artifacts": {
+###     "auth_url": "https://connect.composio.dev/link/abc123...",
+###     "status": "pending_auth",
+###     "toolkit": "googledrive"
+###   },
+###   "outputs": {
+###     "message": "Autenticação necessária para Google Drive."
+###   },
+###   "success": true
+### }

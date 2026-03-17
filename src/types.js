@@ -53,7 +53,10 @@ export class ExecutionState {
     this.errors = [];
     this.confirmations = []; // confirmações do usuário
     this.current_subtask_index = 0;
-    this.status = 'initialized'; // initialized, planning, executing, verifying, completed, failed
+    this.status = 'initialized'; // initialized, planning, executing, verifying, completed, failed, pending_auth
+    this.auth_required = false; // Flag para indicar que autenticação é necessária
+    this.auth_url = null; // URL de autenticação
+    this.auth_message = null; // Mensagem de autenticação
   }
 
   generateTraceId() {

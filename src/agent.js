@@ -195,6 +195,27 @@ export class ComposioOrchestrator {
       debugManager.captureExecution(state, executionMode);
 
       logger.success('Execução concluída');
+      
+      // ============================================================
+      // VERIFICAR SE PRECISA DE AUTENTICAÇÃO
+      // ============================================================
+      if (state.status === 'pending_auth' && state.auth_required) {
+        logger.separator('🔐 AUTENTICAÇÃO NECESSÁRIA');
+        logger.warning('A execução foi pausada porque é necessário autenticar uma conta');
+        logger.field('Link de autenticação', state.auth_url);
+        
+        const authResponse = {
+          status: 200,
+          'response-ai': 'Autenticação necessária para continuar',
+          message: state.auth_message || `Para continuar com a tarefa, você precisa autenticar sua conta.\n\n[Clique aqui para conectar](${state.auth_url})\n\nApós a autenticação, a conexão será ativada automaticamente.`
+        };
+        
+        // Capturar resposta final
+        debugManager.captureFinalResponse(authResponse);
+        await debugManager.finalize();
+        
+        return authResponse;
+      }
 
       // ============================================================
       // FASE 3: VERIFICAÇÃO FINAL

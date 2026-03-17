@@ -283,6 +283,43 @@ export class EnhancedTaskExecutor {
         this.logger.field('Subtask ID', subtask.id);
         this.logger.field('Artefatos', JSON.stringify(state.artifacts[subtask.id]));
         
+        // 🔐 VERIFICAR SE PRECISA DE AUTENTICAÇÃO - PARAR EXECUÇÃO
+        if (result.result.artifacts && result.result.artifacts.needs_authentication) {
+          this.logger.warning('🔐 Autenticação necessária detectada - parando execução das subtarefas');
+          this.logger.field('Link de autenticação', result.result.artifacts.auth_url || result.result.artifacts.url);
+          
+          // Salvar checkpoint como sucesso (aguardando autenticação)
+          const checkpointData = {
+            status: 'pending_auth',
+            artifacts: result.result.artifacts,
+            outputs: result.result.outputs,
+            tool_calls: result.result.tool_calls || [],
+            duration_ms: duration,
+            retries: result.attempts - 1,
+            needs_authentication: true
+          };
+          
+          state.addCheckpoint(subtask.id, checkpointData);
+          this.checkpointManager.saveCheckpoint(idempotencyKey, subtask.id, checkpointData);
+          
+          // Capturar checkpoint no debug
+          if (this.debugManager) {
+            this.debugManager.captureCheckpoint(subtask.id, checkpointData);
+          }
+          
+          this.logger.checkpoint(subtask.id, 'Subtarefa pausada (aguardando autenticação)');
+          
+          // Marcar estado como aguardando autenticação
+          state.status = 'pending_auth';
+          state.auth_required = true;
+          state.auth_url = result.result.artifacts.auth_url || result.result.artifacts.url;
+          state.auth_message = result.result.artifacts.message;
+          
+          // PARAR EXECUÇÃO - não continuar com as próximas subtarefas
+          this.logger.warning('⏸️  Execução pausada - usuário precisa autenticar antes de continuar');
+          break; // Sair do loop de subtarefas
+        }
+        
         // Salvar checkpoint
         const checkpointData = {
           status: 'completed',
@@ -448,6 +485,20 @@ INSTRUÇÕES OBRIGATÓRIAS:
 3. Descobrir ferramentas com COMPOSIO_SEARCH_TOOLS (SEMPRE especifique toolkit!)
 4. Carregar schemas com COMPOSIO_GET_TOOL_SCHEMAS
 5. Garantir autenticação com COMPOSIO_MANAGE_CONNECTIONS (SEMPRE especifique toolkit!)
+   - SEMPRE chame COMPOSIO_MANAGE_CONNECTIONS(toolkit="...", action="check") ANTES de executar qualquer ferramenta
+   - Se a conexão não estiver ativa, COMPOSIO_MANAGE_CONNECTIONS retornará um link de autenticação
+   - Quando receber link de autenticação, retorne JSON com:
+     {
+       "artifacts": {
+         "auth_url": "link_recebido",
+         "status": "pending_auth",
+         "toolkit": "nome_do_toolkit"
+       },
+       "outputs": {
+         "message": "Autenticação necessária. Clique no link para conectar."
+       },
+       "success": true
+     }
 6. ANTES de executar: validar argumentos contra o schema
 7. Para operações COMPLEXAS (edição de arquivos, processamento de dados, bulk):
    - Use COMPOSIO_REMOTE_WORKBENCH
@@ -896,16 +947,81 @@ Retorne um JSON com:
         const parsed = JSON.parse(cleanedText);
         artifacts = parsed.artifacts || {};
         outputs = parsed.outputs || {};
+        
         this.logger.success('✅ Resultado parseado como JSON');
         this.logger.field('Artefatos do JSON', Object.keys(artifacts).length);
         if (Object.keys(artifacts).length > 0) {
           this.logger.json(artifacts, 2);
+        }
+        
+        // 🔐 VERIFICAR SE É RESPOSTA DE AUTENTICAÇÃO NECESSÁRIA
+        if (artifacts.auth_url || artifacts.status === 'pending_auth') {
+          this.logger.warning('🔐 Autenticação necessária detectada no JSON estruturado');
+          this.logger.field('Link de autenticação', artifacts.auth_url);
+          this.logger.field('Toolkit', artifacts.toolkit || 'não especificado');
+          
+          // Adicionar flag de autenticação necessária
+          artifacts.needs_authentication = true;
+          
+          // Retornar imediatamente
+          return {
+            artifacts,
+            outputs,
+            tool_calls: toolCalls,
+            success: true // Considerar sucesso pois o agente identificou corretamente a necessidade de autenticação
+          };
         }
       }
     } catch (parseError) {
       // Se não for JSON, extrair artefatos dos tool calls usando schemas
       this.logger.info('❌ Não é JSON válido, extraindo artefatos dos tool calls');
       this.logger.field('Erro de parse', parseError.message);
+    }
+    
+    // 🔐 DETECÇÃO DE FALTA DE CONEXÃO NO TEXTO (FALLBACK)
+    // Se não conseguiu parsear JSON, verificar se o agente menciona autenticação no texto
+    const needsAuthKeywords = [
+      'não está ativa',
+      'não está conectada',
+      'não está autenticada',
+      'precisa autenticar',
+      'precisa conectar',
+      'autenticar essa conexão',
+      'conectar ao',
+      'connection is not active',
+      'not connected',
+      'not authenticated',
+      'need to authenticate',
+      'need to connect',
+      'authenticate this connection',
+      'connect to'
+    ];
+    
+    const lowerOutput = outputText.toLowerCase();
+    const needsAuth = needsAuthKeywords.some(keyword => lowerOutput.includes(keyword));
+    
+    // Procurar por link de conexão no texto
+    const authLinkMatch = outputText.match(/\[.*?\]\((https:\/\/connect\.composio\.dev\/[^\)]+)\)/i) ||
+                          outputText.match(/(https:\/\/connect\.composio\.dev\/[^\s\)]+)/i);
+    
+    if (needsAuth && authLinkMatch) {
+      this.logger.warning('🔐 Falta de conexão detectada no output do agente (fallback)');
+      this.logger.field('Link de autenticação', authLinkMatch[1]);
+      
+      // Retornar artefatos com flag de autenticação necessária
+      return {
+        artifacts: {
+          auth_url: authLinkMatch[1],
+          status: 'pending_auth',
+          message: outputText,
+          needs_authentication: true
+        },
+        outputs: {
+          raw_output: outputText
+        },
+        tool_calls: toolCalls,
+        success: true // Considerar sucesso pois o agente identificou corretamente a necessidade de autenticação
+      };
     }
 
     // Se não encontrou artefatos no JSON, extrair dos tool calls usando schemas
@@ -1156,6 +1272,7 @@ Retorne um JSON com:
       // Marcar como sucesso parcial (aguardando autenticação)
       result.artifacts.status = 'pending_auth';
       result.artifacts.message = outputText;
+      result.artifacts.needs_authentication = true; // Flag para parar execução
       
       this.logger.success(`Validação da subtarefa ${subtask.id} concluída (aguardando autenticação)`);
       return; // Retornar sem erro

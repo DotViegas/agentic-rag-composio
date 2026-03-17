@@ -19,6 +19,7 @@ Um subagente especializado que executa tarefas complexas em aplicações externa
 - **Retry inteligente**: Classifica erros e faz retry apenas quando faz sentido
 - **Paginação otimizada**: Controle de limites e custos
 - **Formatação inteligente**: Respostas contextualizadas com LLM
+- **Detecção de autenticação**: Para execução automaticamente quando detecta falta de conexão e retorna link de autenticação
 
 ### 🔒 Segurança
 
@@ -108,6 +109,58 @@ cat .debug/debug_trace_*.json | jq '.errors'
 Veja **[DEBUG-GUIDE.md](DEBUG-GUIDE.md)** para documentação detalhada do sistema de debug.
 
 **⚠️ IMPORTANTE:** Use `DEBUG=true` apenas em desenvolvimento. Relatórios contêm dados sensíveis e ocupam espaço em disco.
+
+## 🔐 Detecção Automática de Falta de Conexão
+
+O sistema detecta automaticamente quando uma conta não está conectada e para a execução das subtarefas, retornando o link de autenticação.
+
+### Como funciona
+
+1. **Verificação Proativa**: Agente chama `COMPOSIO_MANAGE_CONNECTIONS` para verificar status da conexão
+2. **Detecção**: Sistema identifica quando Composio retorna link de autenticação
+3. **Parada**: Execução para imediatamente, não executando subtarefas seguintes
+4. **Resposta**: Retorna link de autenticação do Composio para o usuário
+5. **Checkpoint**: Salva estado como `pending_auth` para retomar após autenticação
+
+### Exemplo
+
+```json
+// Requisição
+{
+  "userId": "user123",
+  "task": "Buscar arquivo 'Relatório.xlsx' no Google Drive"
+}
+
+// Agente verifica conexão
+COMPOSIO_MANAGE_CONNECTIONS({ toolkit: "googledrive", action: "check" })
+
+// Agente retorna (se não conectado)
+{
+  "artifacts": {
+    "auth_url": "https://connect.composio.dev/link/...",
+    "status": "pending_auth",
+    "toolkit": "googledrive"
+  },
+  "success": true
+}
+
+// Resposta ao usuário
+{
+  "status": 200,
+  "response-ai": "Autenticação necessária para continuar",
+  "message": "Para continuar com a tarefa, você precisa autenticar sua conta.\n\n[Clique aqui para conectar](https://connect.composio.dev/...)\n\nApós a autenticação, a conexão será ativada automaticamente."
+}
+```
+
+### Benefícios
+
+- ✅ Verificação proativa ANTES de tentar executar ferramentas
+- ✅ JSON estruturado e previsível
+- ✅ Usuário recebe link de autenticação imediatamente
+- ✅ Não desperdiça recursos executando subtarefas que vão falhar
+- ✅ Checkpoint salvo permite retomar execução após autenticação
+
+**Documentação completa**: [docs/AUTH-DETECTION-INDEX.md](docs/AUTH-DETECTION-INDEX.md) - Índice com todos os guias, exemplos e FAQs.
 
 ## 🚀 Quick Start
 
